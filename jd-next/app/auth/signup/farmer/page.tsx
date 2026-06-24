@@ -24,7 +24,7 @@ export default function FarmerSignup() {
   const [form, setForm] = useState({
     name: "", phone: "", email: "", password: "",
     district: "", village: "", aadhar: "",
-    land_acres: "", crops: [] as string[], storage: "",
+    land_acres: "", crops: [] as string[], storage: "", custom_crop: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,7 +32,9 @@ export default function FarmerSignup() {
   function toggleCrop(crop: string) {
     setForm((f) => ({
       ...f,
-      crops: f.crops.includes(crop) ? f.crops.filter((c) => c !== crop) : [...f.crops, crop],
+      crops: f.crops.includes(crop)
+        ? f.crops.filter((c) => c !== crop)
+        : [...f.crops, crop],
     }));
   }
 
@@ -56,6 +58,8 @@ export default function FarmerSignup() {
     } catch { setError("Network error. Try again."); }
     finally { setLoading(false); }
   }
+
+  const hasOther = form.crops.includes("Other");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white py-10 px-4">
@@ -146,8 +150,26 @@ export default function FarmerSignup() {
                   >{c}</button>
                 ))}
               </div>
-              {form.crops.length > 0 && (
-                <p className="text-xs text-green-600 mt-2">Selected: {form.crops.join(", ")}</p>
+
+              {/* "Other" custom crop input */}
+              {hasOther && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Specify your crop(s) <span className="text-gray-400 text-xs">(comma separated if multiple)</span>
+                  </label>
+                  <input
+                    value={form.custom_crop}
+                    onChange={e=>setForm(f=>({...f,custom_crop:e.target.value}))}
+                    placeholder="e.g. Bottle Gourd, Bitter Gourd, Drumstick"
+                    className="w-full border border-green-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                  />
+                </div>
+              )}
+
+              {(form.crops.length > 0 || form.custom_crop) && (
+                <p className="text-xs text-green-600 mt-2">
+                  ✓ {[...form.crops.filter(c=>c!=="Other"), ...(form.custom_crop ? [form.custom_crop] : [])].join(", ")}
+                </p>
               )}
             </div>
 
