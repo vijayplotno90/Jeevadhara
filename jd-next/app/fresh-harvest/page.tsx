@@ -1,6 +1,6 @@
 import { query } from "../../lib/db";
 import Link from "next/link";
-import FreshHarvestClient from "./FreshHarvestClient";
+import AddToCartButton from "./AddToCartButton";
 
 export const dynamic = "force-dynamic";
 
@@ -34,71 +34,117 @@ const IMAGE_MAP: Record<string, string> = {
   "toor dal (pigeon pea)": "/products/toor dal.jpg",
 };
 
-function getProductImage(name: string, images: string[] | null): string {
+function getImg(name: string, images: string[] | null): string {
   if (images && images.length > 0) return images[0];
-  const k = name.toLowerCase().trim();
+  const k = name.toLowerCase();
   for (const [key, val] of Object.entries(IMAGE_MAP)) {
     if (k.includes(key) || key.includes(k)) return val;
   }
   return "/products/organic tomatoes.jpg";
 }
 
-const CATEGORIES = ["All","Vegetables","Fruits","Grains","Pulses","Spices","Honey","Eggs","Mushrooms"];
+const CATS = ["All","Vegetables","Fruits","Grains","Pulses","Spices","Honey","Eggs","Mushrooms"];
 
-export default async function FreshHarvestPage({ searchParams }: { searchParams: { category?: string; search?: string } }) {
-  const cat = searchParams.category || "All";
-  const search = searchParams.search || "";
+export default async function FreshHarvestPage({
+  searchParams,
+}: {
+  searchParams: { category?: string; search?: string };
+}) {
+  const cat = searchParams?.category || "All";
+  const search = searchParams?.search || "";
 
-  let sql = `
-    SELECT p.id, p.name, p.name_telugu, p.price_per_unit, p.unit, p.available_qty,
-           p.is_organic, p.images, f.district AS farm_district, f.jeevadhara_certified,
-           u.name AS farmer_name
-    FROM products p JOIN farms f ON f.id = p.farm_id JOIN users u ON u.id = p.farmer_id
-    LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = TRUE
-  `;
   const params: string[] = [];
-  if (cat !== "All") { params.push(cat); sql += ` AND LOWER(COALESCE(c.name,'Other')) = LOWER($${params.length})`; }
-  if (search) { params.push(`%${search}%`); sql += ` AND p.name ILIKE $${params.length}`; }
-  sql += " ORDER BY f.jeevadhara_certified DESC, p.created_at DESC";
+  let where = "WHERE p.is_active = TRUE";
+  if (cat !== "All") { params.push(cat); where += ` AND LOWER(COALESCE(c.name,'Other')) = LOWER($${params.length})`; }
+  if (search) { params.push(`%${search}%`); where += ` AND p.name ILIKE $${params.length}`; }
 
-  let products: Product[] = [];
-  try { products = await query<Product>(sql, params); } catch (e) { console.error(e); }
-
-  const productsWithImages = products.map(p => ({
-    ...p,
-    price_per_unit: Number(p.price_per_unit),
-    resolved_image: getProductImage(String(p.name), p.images),
-  }));
+  let products: (Product & { resolved_image: string })[] = [];
+  try {
+    const rows = await query<Product>(
+      `SELECT p.id, p.name, p.name_telugu, p.price_per_unit, p.unit, p.available_qty,
+              p.is_organic, p.images, f.district AS farm_district, f.jeevadhara_certified,
+              u.name AS farmer_name
+       FROM products p
+       JOIN farms f ON f.id = p.farm_id
+       JOIN users u ON u.id = p.farmer_id
+       LEFT JOIN categories c ON c.id = p.category_id
+       ${where} ORDER BY f.jeevadhara_certified DESC, p.created_at DESC`,
+      params
+    );
+    products = rows.map(p => ({
+      ...p,
+      price_per_unit: Number(p.price_per_unit),
+      resolved_image: getImg(p.name, p.images),
+    }));
+  } catch (e) {
+    console.error("Fresh Harvest query error:", e);
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">🌿 Fresh Harvest</h1>
-        <p className="text-gray-500 mt-1">Farm-fresh produce, direct from Telangana farmers</p>
+        <p className="text-gray-500 mt-1">Farm-to-doorstep produce from verified Telangana farmers</p>
       </div>
-      <form className="flex gap-2 mb-6" method="GET">
+
+      {/* Search */}
+      <form method="GET" className="flex gap-2 mb-6">
         <input name="search" defaultValue={search} placeholder="Search vegetables, rice, honey..."
-          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+          className="flex-1 border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
         {cat !== "All" && <input type="hidden" name="category" value={cat} />}
-        <button className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-green-700">Search</button>
+        <button className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-green-700 font-medium">Search</button>
       </form>
+
+      {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
-        {CATEGORIES.map(c => (
-          <Link key={c} href={`/fresh-harvest?category=${c}${search ? `&search=${search}` : ""}`}
+        {CATS.map(c => (
+          <Link key={c} href={`/fresh-harvest?category=${c}${search ? `&search=${encodeURIComponent(search)}` : ""}`}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors ${
               cat === c ? "bg-green-600 text-white border-green-600" : "bg-white text-gray-600 border-gray-300 hover:border-green-500"
             }`}>{c}</Link>
         ))}
       </div>
-      <p className="text-sm text-gray-500 mb-5">{productsWithImages.length} products {productsWithImages.filter(p=>p.is_organic).length > 0 && `· 🌱 ${productsWithImages.filter(p=>p.is_organic).length} organic`}</p>
-      {productsWithImages.length === 0 ? (
+
+      <p className="text-sm text-gray-500 mb-5">
+        {products.length} products
+        {products.filter(p => p.is_organic).length > 0 && ` · 🌱 ${products.filter(p => p.is_organic).length} organic`}
+      </p>
+
+      {products.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
-          <p className="text-4xl mb-4">🌾</p><p>No products found</p>
+          <p className="text-5xl mb-4">🌾</p>
+          <p className="text-lg">No products found</p>
           <Link href="/fresh-harvest" className="text-green-600 text-sm mt-2 inline-block">Clear filters</Link>
         </div>
       ) : (
-        <FreshHarvestClient products={productsWithImages} />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          {products.map(p => (
+            <div key={p.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
+              <div className="relative h-48 bg-gray-100 overflow-hidden">
+                <img src={p.resolved_image} alt={p.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                {p.is_organic && <span className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">🌱 Organic</span>}
+                {p.jeevadhara_certified && <span className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">✓</span>}
+              </div>
+              <div className="p-4">
+                <h3 className="font-semibold text-gray-900 text-sm leading-tight">{p.name}</h3>
+                {p.name_telugu && <p className="text-xs text-gray-400 mt-0.5">{p.name_telugu}</p>}
+                <p className="text-xs text-gray-500 mt-1">📍 {p.farm_district} · {p.farmer_name}</p>
+                <p className="text-green-700 font-bold mt-2">
+                  ₹{p.price_per_unit}<span className="text-xs text-gray-400 font-normal">/{p.unit}</span>
+                </p>
+                <AddToCartButton product={{
+                  id: p.id, name: p.name, image: p.resolved_image,
+                  price: p.price_per_unit, unit: p.unit,
+                  farmer: p.farmer_name, district: p.farm_district
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
+
       <div className="mt-12 bg-green-50 border border-green-200 rounded-xl p-6 text-center">
         <p className="text-green-800 font-semibold">🌾 Are you a farmer?</p>
         <p className="text-green-700 text-sm mt-1">List your produce and reach thousands of customers.</p>
