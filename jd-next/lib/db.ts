@@ -5,8 +5,8 @@ import { Signer } from "@aws-sdk/rds-signer";
 
 const HOST   = process.env.AURORA_HOST     || "jeevadhara.cluster-cp26w80kmiw8.eu-north-1.rds.amazonaws.com";
 const PORT   = parseInt(process.env.AURORA_PORT     || "5432");
-const DB     = process.env.AURORA_DATABASE || "postgres";
-const USER   = process.env.AURORA_USER     || "dbadmin";
+const DB     = process.env.AURORA_DATABASE || "jeevadhara";
+const USER   = process.env.AURORA_USER     || "jeevadhara_iam";
 const REGION = process.env.AWS_REGION      || "eu-north-1";
 
 const signer = new Signer({
