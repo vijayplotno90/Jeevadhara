@@ -1,5 +1,6 @@
-// Aurora PostgreSQL — IAM Authentication
-// Works in Next.js API routes (Node.js runtime)
+// Amazon Aurora PostgreSQL — IAM Authentication
+// Required: Aurora PostgreSQL as primary backend (H0 Hackathon rule)
+// Env vars: JEEVADHARA_AWS_KEY_ID, JEEVADHARA_AWS_SECRET (not AWS_* — Vercel reserves those)
 import { Pool } from "pg";
 import { Signer } from "@aws-sdk/rds-signer";
 
@@ -10,13 +11,13 @@ const USER   = process.env.AURORA_USER     || "jeevadhara_iam";
 const REGION = process.env.AWS_REGION      || "eu-north-1";
 
 const signer = new Signer({
-  hostname:  HOST,
-  port:      PORT,
-  region:    REGION,
-  username:  USER,
+  hostname: HOST,
+  port:     PORT,
+  region:   REGION,
+  username: USER,
   credentials: {
-    // NOTE: Vercel reserves AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY for its own infra.
-    // Use JEEVADHARA_AWS_KEY_ID and JEEVADHARA_AWS_SECRET in Vercel env settings instead.
+    // IMPORTANT: Vercel reserves AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY for internal use.
+    // We use JEEVADHARA_AWS_KEY_ID and JEEVADHARA_AWS_SECRET to avoid Vercel overriding them.
     accessKeyId:     process.env.JEEVADHARA_AWS_KEY_ID!,
     secretAccessKey: process.env.JEEVADHARA_AWS_SECRET!,
   },
@@ -24,11 +25,10 @@ const signer = new Signer({
 
 let pool: Pool | null = null;
 let poolCreatedAt = 0;
-const POOL_MAX_AGE = 10 * 60 * 1000; // 10 min (IAM token expires at 15)
+const POOL_MAX_AGE = 10 * 60 * 1000; // 10 min (IAM tokens expire at 15 min)
 
 async function getPool(): Promise<Pool> {
   if (pool && Date.now() - poolCreatedAt < POOL_MAX_AGE) return pool;
-
   if (pool) { await pool.end().catch(() => {}); pool = null; }
 
   const token = await signer.getAuthToken();
@@ -40,7 +40,7 @@ async function getPool(): Promise<Pool> {
     password: token,
     ssl:      { rejectUnauthorized: false },
     max:      5,
-    idleTimeoutMillis:     10_000,
+    idleTimeoutMillis:      10_000,
     connectionTimeoutMillis: 8_000,
   });
 
