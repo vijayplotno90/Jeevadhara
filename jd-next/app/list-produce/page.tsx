@@ -130,11 +130,15 @@ export default function ListProducePage() {
 
   if (success) return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-6xl mb-4">✅</div>
-        <h2 className="text-2xl font-bold text-gray-900">Produce Listed!</h2>
-        <p className="text-gray-500 mt-2">Your product is now live on Fresh Harvest.</p>
-        <p className="text-gray-400 text-sm mt-1">Redirecting to dashboard...</p>
+      <div className="text-center max-w-sm px-4">
+        <div className="text-6xl mb-4">📋</div>
+        <h2 className="text-2xl font-bold text-gray-900">Submitted for Review!</h2>
+        <p className="text-gray-600 mt-2">Your produce has been sent to the Jeevadhara team for quality verification.</p>
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-left text-sm text-amber-800">
+          <p className="font-semibold mb-1">📞 What happens next?</p>
+          <p>Our team will call you, collect a sample, and verify quality. Once certified, your produce goes live for customers.</p>
+        </div>
+        <p className="text-gray-400 text-xs mt-4">Redirecting to dashboard...</p>
       </div>
     </div>
   );

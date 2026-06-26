@@ -47,8 +47,9 @@ export default function FarmerDashboard() {
     setName(n);
 
     async function load() {
+      const userId = localStorage.getItem("jd_user_id") || "";
       const [prodRes, rateRes] = await Promise.all([
-        fetch("/api/products?my=1"),
+        fetch(`/api/products?my=1&farmer_id=${encodeURIComponent(userId)}`),
         fetch("/api/mandi-rates?limit=5"),
       ]);
       if (prodRes.ok) setProducts(await prodRes.json());
@@ -134,8 +135,8 @@ export default function FarmerDashboard() {
                         ₹{Number(p.price_per_unit).toFixed(0)}/{p.unit} · {p.available_qty} {p.unit} available
                       </p>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${p.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                      {p.is_active ? "Active" : "Inactive"}
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${p.is_active ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                      {p.is_active ? "✅ Live" : "⏳ Pending Review"}
                     </span>
                   </div>
                 );

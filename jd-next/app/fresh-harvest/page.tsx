@@ -7,15 +7,13 @@ export const dynamic = "force-dynamic";
 interface Product {
   id: string;
   name: string;
-  name_telugu: string;
   price_per_unit: number;
   unit: string;
   available_qty: number;
-  is_organic: boolean;
+  image_url: string | null;
   farm_district: string;
-  jeevadhara_certified: boolean;
+  category: string;
   farmer_name: string;
-  images: string[] | null;
 }
 
 const IMAGE_MAP: Record<string, string> = {
@@ -34,8 +32,8 @@ const IMAGE_MAP: Record<string, string> = {
   "toor dal (pigeon pea)": "/products/toor dal.jpg",
 };
 
-function getImg(name: string, images: string[] | null): string {
-  if (images && images.length > 0) return images[0];
+function getImg(name: string, image_url: string | null): string {
+  if (image_url) return image_url;
   const k = name.toLowerCase();
   for (const [key, val] of Object.entries(IMAGE_MAP)) {
     if (k.includes(key) || key.includes(k)) return val;
@@ -53,28 +51,38 @@ export default async function FreshHarvestPage({
   const cat = searchParams?.category || "All";
   const search = searchParams?.search || "";
 
-  const params: string[] = [];
+  const params: unknown[] = [];
   let where = "WHERE p.is_active = TRUE";
-  if (cat !== "All") { params.push(cat); where += ` AND LOWER(COALESCE(c.name,'Other')) = LOWER($${params.length})`; }
-  if (search) { params.push(`%${search}%`); where += ` AND p.name ILIKE $${params.length}`; }
+  if (cat !== "All") {
+    params.push(`%${cat.toLowerCase()}%`);
+    where += ` AND LOWER(COALESCE(p.category,'')) LIKE $${params.length}`;
+  }
+  if (search) {
+    params.push(`%${search}%`);
+    where += ` AND p.name ILIKE $${params.length}`;
+  }
 
   let products: (Product & { resolved_image: string })[] = [];
   try {
     const rows = await query<Product>(
-      `SELECT p.id, p.name, p.name_telugu, p.price_per_unit, p.unit, p.available_qty,
-              p.is_organic, p.images, f.district AS farm_district, f.jeevadhara_certified,
-              u.name AS farmer_name
+      `SELECT p.id, p.name,
+              p.price       AS price_per_unit,
+              p.unit,
+              p.stock       AS available_qty,
+              p.image_url,
+              p.district    AS farm_district,
+              p.category,
+              u.name        AS farmer_name
        FROM products p
-       JOIN farms f ON f.id = p.farm_id
-       JOIN users u ON u.id = p.farmer_id
-       LEFT JOIN categories c ON c.id = p.category_id
-       ${where} ORDER BY f.jeevadhara_certified DESC, p.created_at DESC`,
+       JOIN users u ON u.id::text = p.farmer_id::text
+       ${where}
+       ORDER BY p.created_at DESC`,
       params
     );
     products = rows.map(p => ({
       ...p,
       price_per_unit: Number(p.price_per_unit),
-      resolved_image: getImg(p.name, p.images),
+      resolved_image: getImg(p.name, p.image_url),
     }));
   } catch (e) {
     console.error("Fresh Harvest query error:", e);
@@ -107,8 +115,7 @@ export default async function FreshHarvestPage({
       </div>
 
       <p className="text-sm text-gray-500 mb-5">
-        {products.length} products
-        {products.filter(p => p.is_organic).length > 0 && ` · 🌱 ${products.filter(p => p.is_organic).length} organic`}
+        {products.length} certified products available
       </p>
 
       {products.length === 0 ? (
@@ -124,19 +131,18 @@ export default async function FreshHarvestPage({
               <div className="relative h-48 bg-gray-100 overflow-hidden">
                 <img src={p.resolved_image} alt={p.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                {p.is_organic && <span className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">🌱 Organic</span>}
-                {p.jeevadhara_certified && <span className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">✓</span>}
+                <span className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">✓ Certified</span>
               </div>
               <div className="p-4">
                 <h3 className="font-semibold text-gray-900 text-sm leading-tight">{p.name}</h3>
-                {p.name_telugu && <p className="text-xs text-gray-400 mt-0.5">{p.name_telugu}</p>}
+                <p className="text-xs text-gray-400 mt-0.5 capitalize">{p.category}</p>
                 <p className="text-xs text-gray-500 mt-1">📍 {p.farm_district} · {p.farmer_name}</p>
                 <p className="text-green-700 font-bold mt-2">
                   ₹{p.price_per_unit}<span className="text-xs text-gray-400 font-normal">/{p.unit}</span>
                 </p>
                 <AddToCartButton product={{
                   id: p.id, name: p.name, image: p.resolved_image,
-                  price: p.price_per_unit, unit: p.unit,
+                  price: Number(p.price_per_unit), unit: p.unit,
                   farmer: p.farmer_name, district: p.farm_district
                 }} />
               </div>
