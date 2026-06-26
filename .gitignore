@@ -1,0 +1,20 @@
+﻿# Node
+node_modules/
+jd-next/node_modules/
+.next/
+jd-next/.next/
+
+# Env
+.env
+.env.local
+jd-next/.env
+jd-next/.env.local
+
+# Build
+dist/
+jd-next/dist/
+jd-next/build/
+
+# Misc
+.DS_Store
+*.log
