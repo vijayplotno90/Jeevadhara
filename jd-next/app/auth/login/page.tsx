@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const router = useRouter();
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,20 +18,19 @@ export default function LoginPage() {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "login", phone, password }),
+        body: JSON.stringify({ action: "login", phone }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Login failed");
         return;
       }
-      localStorage.setItem("jd_token", data.token);
-      localStorage.setItem("jd_role", data.role);
-      localStorage.setItem("jd_name", data.name);
+      localStorage.setItem("jd_token",   data.token);
+      localStorage.setItem("jd_role",    data.role);
+      localStorage.setItem("jd_name",    data.name);
       localStorage.setItem("jd_user_id", data.id);
 
-      // Role-based redirect
-      if (data.role === "farmer") router.push("/farmer/dashboard");
+      if (data.role === "farmer")   router.push("/farmer/dashboard");
       else if (data.role === "provider") router.push("/provider/dashboard");
       else router.push("/fresh-harvest");
     } catch {
@@ -61,7 +59,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number
+            </label>
             <input
               type="tel"
               value={phone}
@@ -70,17 +70,9 @@ export default function LoginPage() {
               required
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+            <p className="text-xs text-gray-400 mt-1">
+              Your registered mobile number — no password needed
+            </p>
           </div>
           <button
             type="submit"
@@ -95,9 +87,9 @@ export default function LoginPage() {
         <div className="mt-6 bg-gray-50 rounded-lg p-4 text-xs text-gray-500">
           <p className="font-semibold text-gray-600 mb-2">Demo accounts:</p>
           <div className="space-y-1">
-            <p>🌾 Farmer: <span className="font-mono">9876543210</span> / <span className="font-mono">farm123</span></p>
-            <p>🛒 Customer: <span className="font-mono">9876543211</span> / <span className="font-mono">cust123</span></p>
-            <p>🏢 Provider: <span className="font-mono">9876543212</span> / <span className="font-mono">prov123</span></p>
+            <p>🌾 Farmer: <span className="font-mono text-gray-700">9876543210</span></p>
+            <p>🛒 Customer: <span className="font-mono text-gray-700">9876543211</span></p>
+            <p>🏢 Provider: <span className="font-mono text-gray-700">9876543212</span></p>
           </div>
         </div>
 

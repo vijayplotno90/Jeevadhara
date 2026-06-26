@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     const rows = await query<{ id: string }>(
       `INSERT INTO products
          (farmer_id, name, category, price, unit, stock, image_url, description, district, is_active, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,TRUE,NOW())
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,FALSE,NOW())
        RETURNING id`,
       [
         farmer_id,

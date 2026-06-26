@@ -15,8 +15,10 @@ const signer = new Signer({
   region:    REGION,
   username:  USER,
   credentials: {
-    accessKeyId:     process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    // NOTE: Vercel reserves AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY for its own infra.
+    // Use JEEVADHARA_AWS_KEY_ID and JEEVADHARA_AWS_SECRET in Vercel env settings instead.
+    accessKeyId:     process.env.JEEVADHARA_AWS_KEY_ID!,
+    secretAccessKey: process.env.JEEVADHARA_AWS_SECRET!,
   },
 });
 
