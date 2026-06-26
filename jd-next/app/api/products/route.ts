@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
         p.price       AS price_per_unit,
         p.unit,
         p.stock       AS available_qty,
-        FALSE         AS is_organic,
+        COALESCE(p.is_organic, FALSE) AS is_organic,
         p.is_active,
         p.created_at,
         p.image_url,
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         p.category    AS farm_name,
         p.district    AS farm_district,
         p.farmer_id,
-        FALSE         AS jeevadhara_certified,
+        p.is_active   AS jeevadhara_certified,
         u.name        AS farmer_name,
         u.phone       AS farmer_phone
       FROM products p
@@ -65,15 +65,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, category, quantity, unit, price, description, image_url, farmer_id, district } = body;
+    const { name, category, quantity, unit, price, description, image_url, farmer_id, district, is_organic } = body;
 
     if (!name || !quantity || !price || !farmer_id)
       return NextResponse.json({ error: "name, quantity, price and farmer_id required" }, { status: 400 });
 
     const rows = await query<{ id: string }>(
       `INSERT INTO products
-         (farmer_id, name, category, price, unit, stock, image_url, description, district, is_active, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,FALSE,NOW())
+         (farmer_id, name, category, price, unit, stock, image_url, description, district, is_organic, is_active, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,FALSE,NOW())
        RETURNING id`,
       [
         farmer_id,
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
         image_url || null,
         description || null,
         district || "Hyderabad",
+        Boolean(is_organic),
       ]
     );
     return NextResponse.json({ id: rows[0].id, success: true }, { status: 201 });

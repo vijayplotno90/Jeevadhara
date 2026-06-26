@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
          p.description,
          p.district,
          p.is_active,
+         COALESCE(p.is_organic, FALSE) AS is_organic,
          p.created_at,
          u.name  AS farmer_name,
          u.phone AS farmer_phone,
@@ -59,7 +60,8 @@ export async function PATCH(req: NextRequest) {
     if (u !== ADMIN_USER || p !== ADMIN_PASS)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { product_id, action } = await req.json();
+    const body = await req.json();
+    const { product_id, action } = body;
     if (!product_id) return NextResponse.json({ error: "product_id required" }, { status: 400 });
 
     if (action === "deactivate") {
@@ -67,8 +69,45 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: true, certified: false });
     }
 
-    // Default: certify — mark active (DB has no certified column; badge is UI-state only)
-    await query("UPDATE products SET is_active = TRUE WHERE id = $1", [product_id]);
+    if (action === "edit") {
+      // Admin edits product fields without certifying
+      const { price, is_organic, name, description, stock } = body;
+      const setClauses: string[] = [];
+      const params: unknown[] = [];
+
+      if (price !== undefined)       { params.push(parseFloat(price)); setClauses.push(`price = $${params.length}`); }
+      if (is_organic !== undefined)  { params.push(Boolean(is_organic)); setClauses.push(`is_organic = $${params.length}`); }
+      if (name !== undefined)        { params.push(name); setClauses.push(`name = $${params.length}`); }
+      if (description !== undefined) { params.push(description); setClauses.push(`description = $${params.length}`); }
+      if (stock !== undefined)       { params.push(parseFloat(stock)); setClauses.push(`stock = $${params.length}`); }
+
+      if (setClauses.length === 0)
+        return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+
+      params.push(product_id);
+      await query(
+        `UPDATE products SET ${setClauses.join(", ")} WHERE id = $${params.length}`,
+        params
+      );
+      return NextResponse.json({ success: true, action: "edited" });
+    }
+
+    // Default: certify — optionally update editable fields AND activate in one call
+    const { price, is_organic, name, description, stock } = body;
+    const setClauses: string[] = ["is_active = TRUE"];
+    const params: unknown[] = [];
+
+    if (price !== undefined)       { params.push(parseFloat(price)); setClauses.push(`price = $${params.length}`); }
+    if (is_organic !== undefined)  { params.push(Boolean(is_organic)); setClauses.push(`is_organic = $${params.length}`); }
+    if (name !== undefined)        { params.push(name); setClauses.push(`name = $${params.length}`); }
+    if (description !== undefined) { params.push(description); setClauses.push(`description = $${params.length}`); }
+    if (stock !== undefined)       { params.push(parseFloat(stock)); setClauses.push(`stock = $${params.length}`); }
+
+    params.push(product_id);
+    await query(
+      `UPDATE products SET ${setClauses.join(", ")} WHERE id = $${params.length}`,
+      params
+    );
     return NextResponse.json({ success: true, certified: true });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed";

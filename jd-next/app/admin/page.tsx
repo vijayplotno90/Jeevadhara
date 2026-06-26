@@ -23,10 +23,18 @@ interface Product {
   description: string;
   district: string;
   is_active: boolean;
+  is_organic: boolean;
   created_at: string;
   farmer_name: string;
   farmer_phone: string;
   farmer_id: string;
+}
+
+// Per-product editable overrides (admin changes before certifying)
+type EditDraft = {
+  price: string;
+  is_organic: boolean;
+  name: string;
 }
 
 // Notes stored in localStorage per product: { [product_id]: string }
@@ -51,6 +59,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [notes,   setNotes]   = useState<Record<string, string>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [drafts,   setDrafts]   = useState<Record<string, EditDraft>>({});
 
   useEffect(() => {
     if (sessionStorage.getItem("jd_admin") === "1") { setAuthed(true); load(); }
@@ -87,17 +96,20 @@ export default function AdminPage() {
 
   async function certify(product_id: string, activate: boolean) {
     setBusy(product_id);
+    const draft = drafts[product_id];
+    const body = activate
+      ? {
+          product_id,
+          ...(draft?.price       !== undefined ? { price: draft.price }             : {}),
+          ...(draft?.is_organic  !== undefined ? { is_organic: draft.is_organic }   : {}),
+          ...(draft?.name        ? { name: draft.name }                             : {}),
+        }
+      : { product_id, action: "deactivate" };
+
     const res = await fetch("/api/admin", {
       method: "PATCH",
-      headers: {
-        "x-admin-auth": ADMIN_AUTH,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(
-        activate
-          ? { product_id }
-          : { product_id, action: "deactivate" }
-      ),
+      headers: { "x-admin-auth": ADMIN_AUTH, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
     if (res.ok) {
       setMsg(activate ? "✅ Product certified & activated!" : "❌ Product deactivated.");
@@ -105,6 +117,20 @@ export default function AdminPage() {
       load();
     }
     setBusy(null);
+  }
+
+  function openExpand(p: Product) {
+    if (expanded === p.id) { setExpanded(null); return; }
+    setExpanded(p.id);
+    // initialise edit draft with current product values
+    setDrafts(d => ({
+      ...d,
+      [p.id]: { price: String(p.price), is_organic: p.is_organic ?? false, name: p.name },
+    }));
+  }
+
+  function patchDraft(id: string, patch: Partial<EditDraft>) {
+    setDrafts(d => ({ ...d, [id]: { ...d[id], ...patch } }));
   }
 
   function updateNote(id: string, val: string) {
@@ -310,29 +336,90 @@ export default function AdminPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => setExpanded(expanded === p.id ? null : p.id)}
+                      onClick={() => openExpand(p)}
                       className="border border-gray-200 text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-xs">
-                      {expanded === p.id ? "Hide Notes ▲" : "Add Notes ▼"}
+                      {expanded === p.id ? "Close ▲" : "✏️ Edit & Notes ▼"}
                     </button>
                   </div>
                 </div>
 
-                {/* Expandable certification notes */}
-                {expanded === p.id && (
-                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Certification Notes (internal — visible to your team only)
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={notes[p.id] || ""}
-                      onChange={e => updateNote(p.id, e.target.value)}
-                      placeholder={`e.g. Called farmer ${p.farmer_name} on ${new Date().toLocaleDateString("en-IN")}. Sample collected and verified. Meets quality standards. Pesticide-free confirmed.`}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white resize-none"
-                    />
-                    {notes[p.id] && (
-                      <p className="text-xs text-green-600 mt-1">✓ Notes saved</p>
-                    )}
+                {/* Expandable: edit fields + certification notes */}
+                {expanded === p.id && drafts[p.id] && (
+                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-4 space-y-4">
+
+                    {/* Edit panel */}
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">
+                        ✏️ Edit before certifying
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Price edit */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            Price (₹ per {p.unit})
+                          </label>
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm text-gray-400">₹</span>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={drafts[p.id].price}
+                              onChange={e => patchDraft(p.id, { price: e.target.value })}
+                              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                            />
+                          </div>
+                          {drafts[p.id].price !== String(p.price) && (
+                            <p className="text-xs text-amber-600 mt-1">
+                              Changed: ₹{p.price} → ₹{drafts[p.id].price}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Product name edit */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Product Name</label>
+                          <input
+                            type="text"
+                            value={drafts[p.id].name}
+                            onChange={e => patchDraft(p.id, { name: e.target.value })}
+                            className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Organic toggle */}
+                      <div className="flex items-center gap-3 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => patchDraft(p.id, { is_organic: !drafts[p.id].is_organic })}
+                          className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${drafts[p.id].is_organic ? "bg-green-500" : "bg-gray-300"}`}
+                        >
+                          <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow ${drafts[p.id].is_organic ? "right-1" : "left-1"}`} />
+                        </button>
+                        <span className="text-sm text-gray-700">
+                          🌱 Certified Organic
+                          {drafts[p.id].is_organic !== (p.is_organic ?? false) && (
+                            <span className="ml-2 text-xs text-amber-600">
+                              (changed from {p.is_organic ? "Organic" : "Non-organic"})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Certification notes */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                        📋 Certification Notes (internal)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={notes[p.id] || ""}
+                        onChange={e => updateNote(p.id, e.target.value)}
+                        placeholder={`e.g. Called ${p.farmer_name} on ${new Date().toLocaleDateString("en-IN")}. Sample verified. Price negotiated to ₹${drafts[p.id].price}/${p.unit}.`}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white resize-none"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
