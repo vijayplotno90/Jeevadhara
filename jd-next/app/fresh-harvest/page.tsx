@@ -19,19 +19,36 @@ interface Product {
 }
 
 const IMAGE_MAP: Record<string, string> = {
-  "sunflower microgreens": "/products/Fresh-Bunch-of-Sunflower-Microgreens-1.jpg",
-  "country eggs": "/products/country eggs.jpg",
-  "forest wild honey": "/products/forest wild honey.jpg",
-  "green chillies": "/products/green chillies.jpg",
-  "guntur dry red chilli": "/products/guntur dry red chilli.jpg",
-  "organic brinjal": "/products/organic brinjal.jpg",
-  "organic tomatoes": "/products/organic tomatoes.jpg",
-  "oyster mushrooms": "/products/oyster mushrooms.jpg",
-  "raw turmeric": "/products/raw turmeric.jpg",
-  "red onions": "/products/red onions.jpg",
-  "sona masoori rice": "/products/sona masoori rice.jpg",
-  "toor dal": "/products/toor dal.jpg",
+  // Rice & Grains
+  "sona masoori rice":     "/products/sona masoori rice.jpg",
+  "bpt rice":              "/products/bpt rice.jpg",
+  "jowar":                 "/products/jowar.jpg",
+  "black sesame":          "/products/black sesame.jpg",
+  "groundnuts":            "/products/groundnuts.jpg",
+  // Pulses
+  "toor dal":              "/products/toor dal.jpg",
   "toor dal (pigeon pea)": "/products/toor dal.jpg",
+  "chana dal":             "/products/chana dal.jpg",
+  "moong dal":             "/products/moong dal.jpg",
+  "urad dal":              "/products/urad dal.webp",
+  // Vegetables
+  "organic tomatoes":      "/products/organic tomatoes.jpg",
+  "organic brinjal":       "/products/organic brinjal.jpg",
+  "red onions":            "/products/red onions.jpg",
+  "green chillies":        "/products/green chillies.jpg",
+  "moringa leaves":        "/products/moringa leaves.webp",
+  "bottle gourd":          "/products/bottle gourd.jpg",
+  "sunflower microgreens": "/products/Fresh-Bunch-of-Sunflower-Microgreens-1.jpg",
+  // Spices — all chilli variants → chilli image
+  "guntur red chilli":     "/products/guntur dry red chilli.jpg",
+  "guntur dry red chilli": "/products/guntur dry red chilli.jpg",
+  "dry red chilli":        "/products/guntur dry red chilli.jpg",
+  "red chilli":            "/products/guntur dry red chilli.jpg",
+  "raw turmeric":          "/products/raw turmeric.jpg",
+  // Others
+  "forest wild honey":     "/products/forest wild honey.jpg",
+  "country eggs":          "/products/country eggs.jpg",
+  "oyster mushrooms":      "/products/oyster mushrooms.jpg",
 };
 
 function getImg(name: string, image_url: string | null): string {
@@ -40,7 +57,11 @@ function getImg(name: string, image_url: string | null): string {
   for (const [key, val] of Object.entries(IMAGE_MAP)) {
     if (k.includes(key) || key.includes(k)) return val;
   }
-  return "/products/organic tomatoes.jpg";
+  // partial match — check if any word in the product name hits a key
+  for (const [key, val] of Object.entries(IMAGE_MAP)) {
+    if (k.split(" ").some(word => word.length > 3 && key.includes(word))) return val;
+  }
+  return "/products/sona masoori rice.jpg";
 }
 
 const CATS = ["All","Vegetables","Fruits","Grains","Pulses","Spices","Honey","Eggs","Mushrooms"];
