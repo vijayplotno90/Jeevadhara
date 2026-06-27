@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Landmark, Droplets, Shield, Warehouse, Sprout, Waves, Plane, Truck,
   FlaskConical, Stethoscope, Sun, HardHat, Wrench, Phone, ExternalLink,
-  BookOpen, FileCheck2, Users, Camera, Bug, Leaf, Search, ChevronLeft, ChevronRight,
+  BookOpen, FileCheck2, Users, Camera, Bug, Leaf, Search,
 } from "lucide-react";
 
 type Provider = {
@@ -242,149 +242,50 @@ const CATEGORIES: Category[] = [
   },
 ];
 
+/* ── Icon map for compact grid (emoji fallback) ── */
+const CAT_EMOJIS: Record<string, string> = {
+  finance: "🏦", borewell: "💧", fencing: "🛡️", polyhouse: "🏠",
+  hydroponics: "🌿", irrigation: "💦", drone: "🚁", logistics: "🚛",
+  labs: "🔬", vet: "🐄", solar: "☀️", labour: "👷", cropguide: "📚",
+  schemes: "📋", visits: "👨‍🌾", rental: "🚜", cctv: "📷",
+  fodder: "🌾", microgreens: "🌱", pestlab: "🧪",
+};
+
+/* Short labels that fit in compact tiles */
+const CAT_SHORT: Record<string, string> = {
+  finance: "Banking", borewell: "Borewell", fencing: "Fencing", polyhouse: "Polyhouse",
+  hydroponics: "Hydroponic", irrigation: "Irrigation", drone: "Drone", logistics: "Logistics",
+  labs: "Soil Labs", vet: "Veterinary", solar: "Solar", labour: "Labour",
+  cropguide: "Crop Guide", schemes: "Schemes", visits: "Expert Visit", rental: "Rental",
+  cctv: "CCTV", fodder: "Fodder", microgreens: "Microgreens", pestlab: "Pest Lab",
+};
+
 function ProviderCard({ p }: { p: Provider }) {
   return (
-    <article className="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-green-400/60 hover:shadow-md">
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-base text-gray-900 leading-snug group-hover:text-green-700 transition">
-          {p.name}
-        </h3>
-        {p.city && (
-          <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">
-            {p.city}
-          </span>
-        )}
-      </div>
-      <p className="mt-2 flex-1 text-sm text-gray-500 leading-relaxed">{p.desc}</p>
-      <div className="mt-4 flex flex-wrap gap-2">
+    <article className="flex flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-green-300 transition">
+      <h3 className="font-semibold text-sm text-gray-900 leading-snug">{p.name}</h3>
+      <p className="text-xs text-gray-500 mt-1 leading-relaxed flex-1">{p.desc}</p>
+      {p.city && <p className="text-xs text-gray-400 mt-1">📍 {p.city}</p>}
+      <div className="mt-3 flex gap-2 flex-wrap">
         {p.phone && (
-          <a
-            href={"tel:" + p.phone.replace(/\s/g, "")}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-gray-900 px-3 text-xs font-semibold text-white hover:bg-gray-700 transition"
-          >
+          <a href={`tel:${p.phone}`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition">
             <Phone className="h-3 w-3" /> {p.phone}
           </a>
         )}
         {p.url && (
-          p.url.startsWith("/") ? (
-            <Link
-              href={p.url}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:border-green-500 hover:text-green-700 transition"
-            >
-              View on Jeevadhara <ExternalLink className="h-3 w-3" />
-            </Link>
-          ) : (
-            <a
-              href={p.url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 hover:border-green-500 hover:text-green-700 transition"
-            >
-              Visit website <ExternalLink className="h-3 w-3" />
-            </a>
-          )
+          <a href={p.url} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:border-green-400 transition">
+            <ExternalLink className="h-3 w-3" /> Website
+          </a>
         )}
       </div>
     </article>
   );
 }
 
-function ScrollableCats({
-  categories, active, onPick,
-}: {
-  categories: Category[];
-  active: string;
-  onPick: (id: string) => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [canLeft, setCanLeft] = useState(false);
-  const [canRight, setCanRight] = useState(false);
-
-  const update = () => {
-    const el = ref.current;
-    if (!el) return;
-    setCanLeft(el.scrollLeft > 4);
-    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  };
-
-  useEffect(() => {
-    update();
-    const el = ref.current;
-    if (!el) return;
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
-
-  useEffect(() => {
-    const id = setTimeout(update, 50);
-    return () => clearTimeout(id);
-  }, [categories.length]);
-
-  const scrollByPx = (dx: number) =>
-    ref.current?.scrollBy({ left: dx, behavior: "smooth" });
-
-  return (
-    <div className="relative">
-      {canLeft && (
-        <button
-          aria-label="Scroll left"
-          onClick={() => scrollByPx(-300)}
-          className="absolute left-0 top-1/2 z-10 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full border border-gray-200 bg-white shadow-sm hover:border-green-500 hover:text-green-700"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-      )}
-      {canRight && (
-        <button
-          aria-label="Scroll right"
-          onClick={() => scrollByPx(300)}
-          className="absolute right-0 top-1/2 z-10 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full border border-gray-200 bg-white shadow-sm hover:border-green-500 hover:text-green-700"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      )}
-      <div
-        ref={ref}
-        className="flex gap-1 overflow-x-auto scroll-smooth py-3 px-10"
-        style={{ scrollbarWidth: "none" } as React.CSSProperties}
-      >
-        {categories.map((c) => {
-          const CI = c.icon;
-          const isActive = c.id === active;
-          return (
-            <button
-              key={c.id}
-              onClick={() => onPick(c.id)}
-              className={
-                "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition " +
-                (isActive
-                  ? "bg-green-600 text-white shadow-sm"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900")
-              }
-            >
-              <span
-                className={
-                  "grid h-6 w-6 place-items-center rounded-md " +
-                  (isActive ? "bg-white/20" : c.tint)
-                }
-              >
-                <CI className="h-3.5 w-3.5" />
-              </span>
-              {c.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export default function ServicesPage() {
-  const [active, setActive] = useState<string>(CATEGORIES[0].id);
+  const [active, setActive] = useState("finance");
   const [search, setSearch] = useState("");
 
   const cat = CATEGORIES.find((c) => c.id === active) ?? CATEGORIES[0];
@@ -395,152 +296,107 @@ export default function ServicesPage() {
         (c) =>
           c.label.toLowerCase().includes(search.toLowerCase()) ||
           c.blurb.toLowerCase().includes(search.toLowerCase()) ||
-          c.providers.some((p) =>
-            p.name.toLowerCase().includes(search.toLowerCase())
+          c.providers.some(
+            (p) =>
+              p.name.toLowerCase().includes(search.toLowerCase()) ||
+              p.desc.toLowerCase().includes(search.toLowerCase())
           )
       )
     : CATEGORIES;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-        <div className="absolute -left-16 -top-10 h-48 w-48 rounded-full bg-emerald-500/20 blur-3xl" />
-        <div className="absolute -right-16 -bottom-10 h-48 w-48 rounded-full bg-amber-500/20 blur-3xl" />
-        <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-400">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                {CATEGORIES.length} categories &middot; 100+ verified partners
-              </div>
-              <h1 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
-                Service Hub
-              </h1>
-              <p className="mt-1 text-sm text-slate-300">
-                Everything your farm needs beyond the field — finance, infrastructure, technology, expertise.
-              </p>
-            </div>
-            <Link
-              href="/auth/signup/provider"
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-500 px-4 text-xs font-bold text-white shadow-lg hover:bg-emerald-400 transition"
-            >
-              <Wrench className="h-3.5 w-3.5" /> List your service
-            </Link>
+      {/* Compact header */}
+      <div className="bg-white border-b shadow-sm px-4 py-4">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-gray-900">Service Hub</h1>
+            <p className="text-xs text-gray-500 mt-0.5">{CATEGORIES.length} categories &middot; 100+ verified partners</p>
           </div>
-          {/* Search */}
-          <div className="mt-4 max-w-xl">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search — borewell, drone, solar pump, KCC loan..."
-                className="h-11 w-full rounded-lg border border-white/10 bg-white/10 pl-10 pr-4 text-sm text-white placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:bg-white/15 backdrop-blur"
-              />
-            </div>
-          </div>
+          <Link href="/auth/signup/provider"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-xs font-bold text-white hover:bg-green-700 transition self-start sm:self-auto">
+            <Wrench className="h-3.5 w-3.5" /> List your service
+          </Link>
         </div>
-      </section>
+        {/* Search */}
+        <div className="max-w-5xl mx-auto mt-3 relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search — borewell, solar, KCC loan, drone..."
+            className="w-full h-10 rounded-lg border border-gray-200 bg-gray-50 pl-9 pr-4 text-sm text-gray-800 placeholder:text-gray-400 outline-none focus:border-green-500 focus:bg-white transition" />
+        </div>
+      </div>
 
-      {/* Sticky category strip */}
-      {!search.trim() && (
-        <section className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 backdrop-blur shadow-sm">
-          <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-            <ScrollableCats categories={CATEGORIES} active={active} onPick={setActive} />
-          </div>
-        </section>
-      )}
-
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 py-5">
         {search.trim() ? (
-          /* Search results */
+          /* ── Search results ── */
           <div>
-            <p className="mb-5 text-sm text-gray-500">
-              Showing results for <strong>&quot;{search}&quot;</strong> — {filteredCats.length} categories found
+            <p className="mb-4 text-sm text-gray-500">
+              {filteredCats.length} categor{filteredCats.length !== 1 ? "ies" : "y"} for <strong>&quot;{search}&quot;</strong>
             </p>
             {filteredCats.length === 0 ? (
               <p className="py-20 text-center text-gray-400">No services match your search.</p>
-            ) : (
-              <div className="space-y-8">
-                {filteredCats.map((fc) => {
-                  const FCI = fc.icon;
-                  return (
-                    <div key={fc.id}>
-                      <div className="mb-3 flex items-center gap-3">
-                        <span className={"grid h-9 w-9 place-items-center rounded-lg " + fc.tint}>
-                          <FCI className="h-4 w-4" />
-                        </span>
-                        <h3 className="text-xl font-bold text-gray-900">{fc.label}</h3>
-                      </div>
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {fc.providers.map((p) => (
-                          <ProviderCard key={p.name} p={p} />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+            ) : filteredCats.map((fc) => (
+              <div key={fc.id} className="mb-8">
+                <h3 className="font-bold text-base text-gray-800 mb-3 flex items-center gap-2">
+                  <span className="text-xl">{CAT_EMOJIS[fc.id] || "🔧"}</span> {fc.label}
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {fc.providers.map(p => <ProviderCard key={p.name} p={p} />)}
+                </div>
               </div>
-            )}
+            ))}
           </div>
         ) : (
-          /* Category view */
+          /* ── Main view ── */
           <div>
-            {/* Category hero */}
-            <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="absolute right-4 top-4 opacity-10">
-                <Icon className="h-16 w-16" />
-              </div>
-              <div className="flex items-center gap-4">
-                <div className={"grid h-14 w-14 place-items-center rounded-2xl shadow-sm " + cat.tint}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{cat.label}</h2>
-                  <p className="text-xs text-gray-400">{cat.providers.length} verified partners</p>
-                </div>
-              </div>
-              <p className="mt-4 max-w-3xl text-sm text-gray-600 leading-relaxed">{cat.blurb}</p>
-            </div>
-
-            {/* Provider cards */}
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {cat.providers.map((p) => (
-                <ProviderCard key={p.name} p={p} />
+            {/* ALL CATEGORIES GRID — fully visible, no scroll */}
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mb-6">
+              {CATEGORIES.map(c => (
+                <button key={c.id} onClick={() => setActive(c.id)}
+                  className={`flex flex-col items-center gap-1 rounded-xl p-2 text-center transition border ${
+                    active === c.id
+                      ? "bg-green-600 text-white border-green-600 shadow-sm"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-green-400 hover:bg-green-50"
+                  }`}>
+                  <span className="text-2xl leading-none">{CAT_EMOJIS[c.id] || "🔧"}</span>
+                  <span className="text-[10px] font-medium leading-tight">{CAT_SHORT[c.id] || c.label.split(" ")[0]}</span>
+                </button>
               ))}
             </div>
 
-            {/* Provider CTA */}
-            <div className="mt-8 overflow-hidden rounded-2xl border-2 border-dashed border-green-300 bg-gradient-to-br from-green-50 via-white to-white p-6 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100">
-                <Wrench className="h-7 w-7 text-green-700" />
+            {/* Selected category hero */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm mb-5 relative overflow-hidden">
+              <div className="absolute right-4 top-4 opacity-5 text-8xl select-none">{CAT_EMOJIS[cat.id]}</div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className={"grid h-12 w-12 place-items-center rounded-xl text-2xl " + cat.tint}>
+                  {CAT_EMOJIS[cat.id] || "🔧"}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{cat.label}</h2>
+                  <p className="text-xs text-gray-400">{cat.providers.length} verified partners</p>
+                </div>
               </div>
-              <h3 className="mt-3 text-xl font-bold text-gray-900">
-                Are you a {cat.label.toLowerCase()} provider?
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                List your business on Jeevadhara. Reach verified farmers across India —{" "}
-                <strong>free for the first year.</strong>
-              </p>
-              <Link
-                href="/auth/signup/provider"
-                className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl bg-green-600 px-5 text-sm font-semibold text-white shadow hover:bg-green-700 transition"
-              >
-                Sign up as a Service Partner
+              <p className="text-sm text-gray-600 leading-relaxed">{cat.blurb}</p>
+            </div>
+
+            {/* Provider cards */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {cat.providers.map(p => <ProviderCard key={p.name} p={p} />)}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-8 rounded-2xl border-2 border-dashed border-green-300 bg-green-50 p-5 text-center">
+              <p className="font-bold text-gray-900">Are you a {cat.label.toLowerCase()} provider?</p>
+              <p className="text-sm text-gray-500 mt-1">List free for the first year — reach verified farmers across Telangana.</p>
+              <Link href="/auth/signup/provider"
+                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-green-700 transition">
+                <Wrench className="h-4 w-4" /> Sign up as Service Partner
               </Link>
             </div>
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 }
