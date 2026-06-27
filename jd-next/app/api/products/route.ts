@@ -95,3 +95,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+// Farmer updates price and/or stock on their own listing
+export async function PATCH(req: NextRequest) {
+  try {
+    const { id, price, stock, farmer_id } = await req.json();
+    if (!id || !farmer_id)
+      return NextResponse.json({ error: "id and farmer_id required" }, { status: 400 });
+
+    const updates: string[] = [];
+    const params: unknown[] = [];
+
+    if (price !== undefined && price !== null) {
+      params.push(parseFloat(price));
+      updates.push(`price = $${params.length}`);
+    }
+    if (stock !== undefined && stock !== null) {
+      params.push(parseFloat(stock));
+      updates.push(`stock = $${params.length}`);
+    }
+    if (updates.length === 0)
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+
+    // farmer_id guard — farmer can only edit their own listings
+    params.push(id);
+    params.push(farmer_id);
+    await query(
+      `UPDATE products SET ${updates.join(", ")}
+       WHERE id::text = $${params.length - 1}::text
+         AND farmer_id::text = $${params.length}::text`,
+      params
+    );
+    return NextResponse.json({ ok: true });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed";
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}

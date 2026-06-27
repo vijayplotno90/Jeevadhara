@@ -1,95 +1,281 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { TrendingDown, TrendingUp, IndianRupee } from "lucide-react";
+import Link from "next/link";
 
-type EggRate = { id: string; city: string; state: string; price_per_100: number; rate_date: string };
-
-const CITY_TIERS: Record<string, string> = {
-  Namakkal: "Source Hub", Hyderabad: "Major City", Bengaluru: "Major City",
-  Mumbai: "Metro", "Delhi (CC)": "Metro", Kolkata: "Metro", Pune: "Major City",
+type EggRate = {
+  id: string;
+  city: string;
+  state: string;
+  price_per_100: number;
+  rate_date: string;
 };
+
+const EGG_TYPES = [
+  {
+    id: "white",
+    name: "White Layer (NECC)",
+    telugu: "తెల్ల గుడ్లు",
+    emoji: "🥚",
+    tagline: "Standard NECC commercial layer",
+    description:
+      "Benchmark NECC wholesale rate — eggs from Leghorn-type white-feathered layer hens. Most widely traded in India. Rates updated daily from NECC.",
+    premiumPct: 0,
+    badge: null,
+    color: "amber",
+  },
+  {
+    id: "brown",
+    name: "Brown Eggs",
+    telugu: "గోధుమ రంగు గుడ్లు",
+    emoji: "🟤",
+    tagline: "Rhode Island Red & similar breeds",
+    description:
+      "Thicker shell, slightly larger yolk, mild taste difference. From brown-feathered layer breeds. ~18% premium over white eggs.",
+    premiumPct: 18,
+    badge: null,
+    color: "orange",
+  },
+  {
+    id: "country",
+    name: "Country / Naatu Kodi",
+    telugu: "నాటు కోడి గుడ్లు",
+    emoji: "🐔",
+    tagline: "Desi free-range · Pandem Kodi",
+    description:
+      "Traditional desi hens, free-roaming, corn-grass fed. Deep orange yolk, richer flavour, smaller size. Most preferred in Telangana, Andhra, Tamil Nadu. Limited daily supply.",
+    premiumPct: 220,
+    badge: "Most preferred in South India",
+    color: "red",
+  },
+  {
+    id: "kadaknath",
+    name: "Kadaknath",
+    telugu: "కడక్‌నాథ్",
+    emoji: "🖤",
+    tagline: "GI-tagged black-meat breed · Madhya Pradesh",
+    description:
+      "GI-tagged Kali Masi breed from MP. Black flesh, bones, and organs. Extremely low-fat (0.73%), high-protein eggs. Prized for medicinal value.",
+    premiumPct: 380,
+    badge: "GI Tagged · Premium",
+    color: "purple",
+  },
+  {
+    id: "quail",
+    name: "Quail (Bater) Eggs",
+    telugu: "గడ్డి కోడి గుడ్లు",
+    emoji: "🫧",
+    tagline: "Small, speckled, protein-dense",
+    description:
+      "Tiny speckled eggs from Japanese quail. Rich in B12, iron, and selenium. 3–4 quail eggs ≈ 1 chicken egg in nutrition. Sold in 50–100 egg lots.",
+    premiumPct: -20,
+    badge: null,
+    color: "teal",
+  },
+  {
+    id: "duck",
+    name: "Duck Eggs",
+    telugu: "బాతు గుడ్లు",
+    emoji: "🦆",
+    tagline: "Coastal & wetland farms · Andhra / Kerala",
+    description:
+      "Larger than chicken eggs, creamier whites, richer dark yolk. Popular for baking. Major production in Krishna, West Godavari, Alappuzha districts.",
+    premiumPct: 60,
+    badge: null,
+    color: "blue",
+  },
+];
+
+const ACCENT: Record<string, string> = {
+  amber: "text-amber-700 bg-amber-50 border-amber-200",
+  orange: "text-orange-700 bg-orange-50 border-orange-200",
+  red: "text-red-700 bg-red-50 border-red-200",
+  purple: "text-purple-700 bg-purple-50 border-purple-200",
+  teal: "text-teal-700 bg-teal-50 border-teal-200",
+  blue: "text-blue-700 bg-blue-50 border-blue-200",
+};
+
+const ACTIVE_HEADER: Record<string, string> = {
+  amber: "from-amber-500 to-yellow-400",
+  orange: "from-orange-500 to-amber-400",
+  red: "from-red-600 to-orange-400",
+  purple: "from-purple-700 to-violet-500",
+  teal: "from-teal-600 to-cyan-400",
+  blue: "from-blue-600 to-sky-400",
+};
+
+function fmt(n: number) {
+  return Number(n).toFixed(2).replace(/\.00$/, "");
+}
 
 export default function EggPricesPage() {
   const [rates, setRates] = useState<EggRate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeId, setActiveId] = useState("white");
 
   useEffect(() => {
     fetch("/api/egg-rates")
-      .then(r => r.json())
-      .then(d => { setRates(Array.isArray(d) ? d : []); setLoading(false); })
+      .then((r) => r.json())
+      .then((d) => {
+        setRates(Array.isArray(d) ? d : []);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
 
-  const avg = useMemo(() => rates.length ? Math.round(rates.reduce((s, r) => s + r.price_per_100, 0) / rates.length) : 0, [rates]);
-  const sorted = useMemo(() => [...rates].sort((a, b) => b.price_per_100 - a.price_per_100), [rates]);
-  const highest = sorted[0];
-  const lowest = sorted[sorted.length - 1];
+  const activeType = EGG_TYPES.find((t) => t.id === activeId)!;
+
+  const adjusted = useMemo(() => {
+    return rates
+      .map((r) => ({
+        ...r,
+        price_per_100: Math.round(
+          Number(r.price_per_100) * (1 + activeType.premiumPct / 100)
+        ),
+      }))
+      .sort((a, b) => b.price_per_100 - a.price_per_100);
+  }, [rates, activeType]);
+
+  const avg = adjusted.length
+    ? Math.round(adjusted.reduce((s, r) => s + r.price_per_100, 0) / adjusted.length)
+    : 0;
+  const highest = adjusted[0];
+  const lowest = adjusted[adjusted.length - 1];
+
+  const accent = ACCENT[activeType.color];
+  const gradient = ACTIVE_HEADER[activeType.color];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <section className="bg-gradient-to-br from-amber-50 to-yellow-50 border-b border-gray-200">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <span className="text-5xl">🥚</span>
-          <h1 className="mt-2 font-serif text-3xl font-bold text-gray-900 sm:text-4xl">Egg Prices</h1>
-          <p className="mt-2 text-gray-500">Daily wholesale egg rates across major Indian cities</p>
-          {!loading && avg > 0 && (
-            <div className="mt-6 flex flex-wrap gap-4">
-              <div className="rounded-xl bg-white border border-amber-200 px-5 py-3 shadow-soft">
-                <p className="text-xs text-gray-500">National Average</p>
-                <p className="font-serif text-2xl font-bold text-amber-700">₹{avg}<span className="text-sm font-normal text-gray-400">/100 eggs</span></p>
+      {/* Hero */}
+      <div className={`bg-gradient-to-r ${gradient} text-white px-4 py-8`}>
+        <h1 className="text-2xl font-bold">🥚 Egg Market</h1>
+        <p className="text-white/80 text-sm mt-1">
+          Daily rates by egg type · Telangana + major Indian cities
+        </p>
+        <p className="text-white/60 text-xs mt-1">
+          Updated: {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+        </p>
+      </div>
+
+      {/* Egg type tabs */}
+      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
+        <div className="flex overflow-x-auto gap-2 px-3 py-3 scrollbar-hide">
+          {EGG_TYPES.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveId(t.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border shrink-0 ${
+                activeId === t.id
+                  ? `border-current ${ACCENT[t.color]} shadow-sm`
+                  : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"
+              }`}
+            >
+              <span>{t.emoji}</span>
+              <span className="hidden sm:inline">{t.name}</span>
+              <span className="sm:hidden">{t.name.split(" ")[0]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-5">
+
+        {/* Active type info card */}
+        <div className={`rounded-2xl border p-4 mb-5 ${accent}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-2xl">{activeType.emoji}</span>
+                <div>
+                  <p className="font-bold text-base">{activeType.name}</p>
+                  <p className="text-xs opacity-70">{activeType.telugu} · {activeType.tagline}</p>
+                </div>
               </div>
-              {highest && (
-                <div className="rounded-xl bg-white border border-red-100 px-5 py-3 shadow-soft flex items-center gap-3">
-                  <TrendingUp className="h-5 w-5 text-red-500" />
-                  <div>
-                    <p className="text-xs text-gray-500">Highest — {highest.city}</p>
-                    <p className="font-serif text-xl font-bold text-red-600">₹{highest.price_per_100}</p>
-                  </div>
-                </div>
-              )}
-              {lowest && (
-                <div className="rounded-xl bg-white border border-green-100 px-5 py-3 shadow-soft flex items-center gap-3">
-                  <TrendingDown className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Lowest — {lowest.city}</p>
-                    <p className="font-serif text-xl font-bold text-green-700">₹{lowest.price_per_100}</p>
-                  </div>
-                </div>
-              )}
+              <p className="text-sm mt-2 leading-relaxed opacity-80">{activeType.description}</p>
             </div>
+            {activeType.badge && (
+              <span className="shrink-0 text-xs font-bold bg-black/10 px-3 py-1 rounded-full whitespace-nowrap">
+                {activeType.badge}
+              </span>
+            )}
+          </div>
+          {activeType.premiumPct !== 0 && (
+            <p className="text-xs mt-2 opacity-60">
+              Prices estimated from NECC white rate {activeType.premiumPct > 0 ? "+" : ""}{activeType.premiumPct}% typical market premium.
+            </p>
           )}
         </div>
-      </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Stats */}
+        {!loading && avg > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 text-center">
+              <p className="text-xs text-gray-500">National Avg</p>
+              <p className="text-xl font-bold text-gray-900 mt-0.5">₹{avg}</p>
+              <p className="text-xs text-gray-400">/ 100 eggs</p>
+            </div>
+            {highest && (
+              <div className="bg-white rounded-xl border border-red-100 shadow-sm p-3 text-center">
+                <p className="text-xs text-gray-500">Highest</p>
+                <p className="text-xl font-bold text-red-600 mt-0.5">₹{highest.price_per_100}</p>
+                <p className="text-xs text-gray-400">{highest.city}</p>
+              </div>
+            )}
+            {lowest && (
+              <div className="bg-white rounded-xl border border-green-100 shadow-sm p-3 text-center">
+                <p className="text-xs text-gray-500">Lowest</p>
+                <p className="text-xl font-bold text-green-700 mt-0.5">₹{lowest.price_per_100}</p>
+                <p className="text-xs text-gray-400">{lowest.city}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* City cards */}
         {loading ? (
-          <div className="text-center py-20 text-gray-400">Loading rates...</div>
+          <div className="text-center py-16 text-gray-400">Loading rates…</div>
+        ) : adjusted.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">No rates available today.</div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sorted.map((r, i) => {
-              const pct = Math.round(((r.price_per_100 - (lowest?.price_per_100 ?? r.price_per_100)) / Math.max(1, (highest?.price_per_100 ?? r.price_per_100) - (lowest?.price_per_100 ?? r.price_per_100))) * 100);
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {adjusted.map((r, i) => {
+              const range = (highest?.price_per_100 ?? 1) - (lowest?.price_per_100 ?? 0);
+              const pct = range > 0
+                ? Math.round(((r.price_per_100 - (lowest?.price_per_100 ?? 0)) / range) * 100)
+                : 50;
               return (
-                <div key={r.id} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-soft hover:shadow-card transition-shadow">
+                <div
+                  key={r.id}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="flex items-center gap-2">
-                        {i === 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">Highest</span>}
-                        {i === sorted.length - 1 && <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Lowest</span>}
-                      </div>
-                      <h3 className="font-serif text-xl font-bold text-gray-900 mt-1">{r.city}</h3>
-                      <p className="text-sm text-gray-500">{r.state}</p>
-                      {CITY_TIERS[r.city] && <span className="mt-1 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">{CITY_TIERS[r.city]}</span>}
+                      {i === 0 && (
+                        <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-medium">Highest</span>
+                      )}
+                      {i === adjusted.length - 1 && (
+                        <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">Lowest</span>
+                      )}
+                      <p className="font-bold text-gray-900 mt-1">{r.city}</p>
+                      <p className="text-xs text-gray-400">{r.state}</p>
                     </div>
-                    <span className="text-4xl">🥚</span>
+                    <span className="text-2xl">{activeType.emoji}</span>
                   </div>
-                  <div className="mt-4 flex items-baseline gap-1">
-                    <IndianRupee className="h-4 w-4 text-amber-700" />
-                    <span className="font-serif text-3xl font-bold text-amber-700">{r.price_per_100}</span>
-                    <span className="text-sm text-gray-400">/ 100 eggs</span>
+
+                  <div className="mt-3">
+                    <span className="text-2xl font-bold text-gray-900">₹{r.price_per_100}</span>
+                    <span className="text-xs text-gray-400 ml-1">/ 100</span>
                   </div>
-                  <div className="mt-1 text-xs text-gray-400">₹{(r.price_per_100 / 100).toFixed(2)} per egg</div>
-                  <div className="mt-3 h-1.5 rounded-full bg-gray-100">
-                    <div className="h-1.5 rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    ₹{fmt(r.price_per_100 / 100)} per egg
+                  </p>
+
+                  {/* price bar */}
+                  <div className="mt-3 h-1 rounded-full bg-gray-100">
+                    <div
+                      className="h-1 rounded-full bg-amber-400 transition-all"
+                      style={{ width: `${Math.max(8, pct)}%` }}
+                    />
                   </div>
                 </div>
               );
@@ -97,11 +283,38 @@ export default function EggPricesPage() {
           </div>
         )}
 
-        <div className="mt-8 rounded-2xl border border-amber-100 bg-amber-50 p-6">
-          <h3 className="font-serif text-lg font-bold text-amber-900">🐔 Want to sell eggs?</h3>
-          <p className="mt-2 text-sm text-amber-800">List your farm-fresh eggs on Jeevadhara and reach consumers directly.</p>
-          <a href="/list-produce" className="mt-3 inline-block rounded-lg bg-amber-600 text-white px-5 py-2 text-sm font-semibold hover:bg-amber-700">Start selling</a>
+        {/* Per egg quick math */}
+        {!loading && avg > 0 && (
+          <div className="mt-5 bg-amber-50 border border-amber-100 rounded-2xl p-4">
+            <p className="font-semibold text-amber-900 text-sm">📐 Quick Price Reference — {activeType.name}</p>
+            <div className="grid grid-cols-4 gap-3 mt-3">
+              {[1, 6, 30, 100].map((qty) => (
+                <div key={qty} className="text-center">
+                  <p className="text-xs text-amber-700 font-medium">{qty} egg{qty > 1 ? "s" : ""}</p>
+                  <p className="text-sm font-bold text-amber-900 mt-0.5">
+                    ₹{fmt((avg / 100) * qty)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sell CTA */}
+        <div className="mt-5 bg-green-50 border border-green-100 rounded-2xl p-4 flex items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold text-green-900 text-sm">🐔 Sell your eggs on Jeevadhara</p>
+            <p className="text-xs text-green-700 mt-0.5">List farm-fresh eggs — reach buyers directly, update price daily</p>
+          </div>
+          <Link href="/list-produce"
+            className="shrink-0 bg-green-600 text-white text-sm px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition-colors">
+            Start Selling
+          </Link>
         </div>
+
+        <p className="text-xs text-gray-400 text-center mt-4 pb-4">
+          NECC white egg rates used as base. Other types are market estimates. Actual local prices may vary.
+        </p>
       </div>
     </div>
   );

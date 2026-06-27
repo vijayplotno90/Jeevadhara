@@ -49,23 +49,32 @@ const SERVICE_HUB = [
   { icon:"👨‍🌾", label:"Kisan Expert", href:"/services/expert", desc:"Talk to agri experts" },
 ];
 
+type EditState = { price: string; stock: string };
+
 export default function FarmerDashboard() {
   const router = useRouter();
   const [name, setName]         = useState("");
+  const [userId, setUserId]     = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders]     = useState<Order[]>([]);
   const [rates, setRates]       = useState<MandiRate[]>([]);
   const [activeTab, setActiveTab] = useState<"products"|"orders">("products");
   const [loading, setLoading]   = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<EditState>({ price: "", stock: "" });
+  const [saving, setSaving]     = useState(false);
+  const [saveMsg, setSaveMsg]   = useState<Record<string, string>>({});
 
   useEffect(() => {
     const role = localStorage.getItem("jd_role");
     if (role !== "farmer") { router.push("/auth/login"); return; }
     const n = localStorage.getItem("jd_name") || "Farmer";
     setName(n);
+    const uid = localStorage.getItem("jd_user_id") || "";
+    setUserId(uid);
 
     async function load() {
-      const userId = localStorage.getItem("jd_user_id") || "";
+      const userId = uid;
       const [prodRes, rateRes, orderRes] = await Promise.all([
         fetch(`/api/products?my=1&farmer_id=${encodeURIComponent(userId)}`),
         fetch("/api/mandi-rates?limit=5"),
@@ -87,6 +96,39 @@ export default function FarmerDashboard() {
       </div>
     </div>
   );
+
+  function startEdit(p: Product) {
+    setEditingId(p.id);
+    setEditDraft({ price: String(Number(p.price_per_unit).toFixed(2)), stock: String(p.available_qty) });
+  }
+
+  async function saveEdit(productId: string) {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: productId,
+          farmer_id: userId,
+          price: parseFloat(editDraft.price) || undefined,
+          stock: parseFloat(editDraft.stock) || undefined,
+        }),
+      });
+      if (res.ok) {
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === productId
+              ? { ...p, price_per_unit: parseFloat(editDraft.price), available_qty: parseFloat(editDraft.stock) }
+              : p
+          )
+        );
+        setSaveMsg((m) => ({ ...m, [productId]: "✅ Saved" }));
+        setEditingId(null);
+        setTimeout(() => setSaveMsg((m) => { const n = { ...m }; delete n[productId]; return n; }), 3000);
+      }
+    } finally { setSaving(false); }
+  }
 
   const activeCount  = products.filter(p => p.is_active).length;
   const totalValue   = products.reduce((s, p) => s + (Number(p.price_per_unit) * Number(p.available_qty || 0)), 0);
@@ -199,26 +241,105 @@ export default function FarmerDashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {products.map(p=>{
+              {products.map(p => {
                 const img = p.images?.[0] || null;
+                const isEditing = editingId === p.id;
                 return (
-                  <div key={p.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                      {img ? (
-                        <img src={img} alt={p.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl">🌿</div>
-                      )}
+                  <div key={p.id} className={`bg-white rounded-xl border shadow-sm p-4 transition-all ${isEditing ? "border-green-300 ring-1 ring-green-200" : "border-gray-100"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                        {img ? (
+                          <img src={img} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xl">🌿</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-sm truncate">{p.name}</h3>
+                        {!isEditing ? (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            ₹{Number(p.price_per_unit).toFixed(2)}/{p.unit} ·{" "}
+                            <span className="font-medium text-gray-700">{p.available_qty} {p.unit}</span> in stock
+                          </p>
+                        ) : (
+                          <p className="text-xs text-green-600 mt-0.5">Editing — update price & stock below</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {saveMsg[p.id] && (
+                          <span className="text-xs text-green-600 font-medium">{saveMsg[p.id]}</span>
+                        )}
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${p.is_active ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                          {p.is_active ? "✅ Live" : "⏳ Pending"}
+                        </span>
+                        {!isEditing ? (
+                          <button onClick={() => startEdit(p)}
+                            className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+                            ✏️ Edit
+                          </button>
+                        ) : (
+                          <button onClick={() => setEditingId(null)}
+                            className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-sm">{p.name}</h3>
-                      <p className="text-xs text-gray-500">
-                        ₹{Number(p.price_per_unit).toFixed(0)}/{p.unit} · {p.available_qty} {p.unit} available
-                      </p>
-                    </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${p.is_active ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                      {p.is_active ? "✅ Live" : "⏳ Pending Review"}
-                    </span>
+
+                    {/* Inline edit form */}
+                    {isEditing && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs text-gray-500 font-medium block mb-1">
+                              Price (₹ per {p.unit})
+                            </label>
+                            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-green-400 focus-within:ring-1 focus-within:ring-green-300">
+                              <span className="px-2 text-gray-400 text-sm bg-gray-50 self-stretch flex items-center border-r border-gray-200">₹</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={editDraft.price}
+                                onChange={e => setEditDraft(d => ({ ...d, price: e.target.value }))}
+                                className="w-full px-3 py-2 text-sm focus:outline-none"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-500 font-medium block mb-1">
+                              Stock ({p.unit} available)
+                            </label>
+                            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-green-400 focus-within:ring-1 focus-within:ring-green-300">
+                              <input
+                                type="number"
+                                min="0"
+                                value={editDraft.stock}
+                                onChange={e => setEditDraft(d => ({ ...d, stock: e.target.value }))}
+                                className="w-full px-3 py-2 text-sm focus:outline-none"
+                                placeholder="0"
+                              />
+                              <span className="px-2 text-gray-400 text-sm bg-gray-50 self-stretch flex items-center border-l border-gray-200">{p.unit}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            onClick={() => saveEdit(p.id)}
+                            disabled={saving}
+                            className="flex-1 bg-green-600 text-white text-sm py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-60"
+                          >
+                            {saving ? "Saving…" : "💾 Save Changes"}
+                          </button>
+                          <button onClick={() => setEditingId(null)}
+                            className="px-4 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50">
+                            Cancel
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2 text-center">
+                          Price and stock update instantly — buyers see the new rate immediately.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
