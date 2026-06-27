@@ -1,22 +1,8 @@
 import { query } from "../../lib/db";
 import Link from "next/link";
-import AddToCartButton from "./AddToCartButton";
+import ProductGrid, { GroupedProduct } from "./ProductGrid";
 
 export const dynamic = "force-dynamic";
-
-interface Product {
-  id: string;
-  name: string;
-  price_per_unit: number;
-  unit: string;
-  available_qty: number;
-  image_url: string | null;
-  farm_district: string;
-  category: string;
-  farmer_name: string;
-  farmer_id: string;
-  is_organic: boolean;
-}
 
 const IMAGE_MAP: Record<string, string> = {
   // Rice & Grains
@@ -39,7 +25,7 @@ const IMAGE_MAP: Record<string, string> = {
   "moringa leaves":        "/products/moringa leaves.webp",
   "bottle gourd":          "/products/bottle gourd.jpg",
   "sunflower microgreens": "/products/Fresh-Bunch-of-Sunflower-Microgreens-1.jpg",
-  // Spices — all chilli variants → chilli image
+  // Spices
   "guntur red chilli":     "/products/guntur dry red chilli.jpg",
   "guntur dry red chilli": "/products/guntur dry red chilli.jpg",
   "dry red chilli":        "/products/guntur dry red chilli.jpg",
@@ -57,7 +43,6 @@ function getImg(name: string, image_url: string | null): string {
   for (const [key, val] of Object.entries(IMAGE_MAP)) {
     if (k.includes(key) || key.includes(k)) return val;
   }
-  // partial match — check if any word in the product name hits a key
   for (const [key, val] of Object.entries(IMAGE_MAP)) {
     if (k.split(" ").some(word => word.length > 3 && key.includes(word))) return val;
   }
@@ -66,13 +51,26 @@ function getImg(name: string, image_url: string | null): string {
 
 const CATS = ["All","Vegetables","Fruits","Grains","Pulses","Spices","Honey","Eggs","Mushrooms"];
 
+interface RawGroup {
+  name: string;
+  category: string;
+  min_price: number;
+  max_price: number;
+  total_stock: number;
+  seller_count: number;
+  has_organic: boolean;
+  image_url: string | null;
+  districts: string;
+  unit: string;
+}
+
 export default async function FreshHarvestPage({
   searchParams,
 }: {
   searchParams: { category?: string; search?: string };
 }) {
-  const cat = searchParams?.category || "All";
-  const search = searchParams?.search || "";
+  const cat    = searchParams?.category || "All";
+  const search = searchParams?.search   || "";
 
   const params: unknown[] = [];
   let where = "WHERE p.is_active = TRUE";
@@ -85,29 +83,36 @@ export default async function FreshHarvestPage({
     where += ` AND p.name ILIKE $${params.length}`;
   }
 
-  let products: (Product & { resolved_image: string })[] = [];
+  let products: GroupedProduct[] = [];
   try {
-    const rows = await query<Product>(
-      `SELECT p.id, p.name,
-              p.price       AS price_per_unit,
-              p.unit,
-              p.stock       AS available_qty,
-              p.image_url,
-              p.district    AS farm_district,
-              p.category,
-              COALESCE(p.is_organic, FALSE) AS is_organic,
-              p.farmer_id,
-              u.name        AS farmer_name
+    const rows = await query<RawGroup>(
+      `SELECT
+         MIN(p.name)                                          AS name,
+         p.category,
+         MIN(p.price)                                        AS min_price,
+         MAX(p.price)                                        AS max_price,
+         SUM(p.stock)::int                                   AS total_stock,
+         COUNT(p.id)::int                                    AS seller_count,
+         BOOL_OR(COALESCE(p.is_organic, FALSE))              AS has_organic,
+         (SELECT p2.image_url FROM products p2
+          WHERE LOWER(p2.name) = LOWER(p.name)
+            AND p2.is_active = TRUE
+            AND p2.image_url IS NOT NULL
+          LIMIT 1)                                           AS image_url,
+         STRING_AGG(DISTINCT p.district, ' · ')              AS districts,
+         MIN(p.unit)                                         AS unit
        FROM products p
-       JOIN users u ON u.id::text = p.farmer_id::text
        ${where}
-       ORDER BY p.is_organic DESC, p.created_at DESC`,
+       GROUP BY LOWER(p.name), p.category
+       ORDER BY seller_count DESC, min_price ASC`,
       params
     );
-    products = rows.map(p => ({
-      ...p,
-      price_per_unit: Number(p.price_per_unit),
-      resolved_image: getImg(p.name, p.image_url),
+
+    products = rows.map(r => ({
+      ...r,
+      min_price:     Number(r.min_price),
+      max_price:     Number(r.max_price),
+      resolved_image: getImg(r.name, r.image_url),
     }));
   } catch (e) {
     console.error("Fresh Harvest query error:", e);
@@ -118,7 +123,7 @@ export default async function FreshHarvestPage({
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">🌿 Fresh Harvest</h1>
-        <p className="text-gray-500 mt-1">Farm-to-doorstep produce from verified Telangana farmers</p>
+        <p className="text-gray-500 mt-1">Farm-to-doorstep produce · Click any product to compare sellers &amp; prices</p>
       </div>
 
       {/* Search */}
@@ -132,15 +137,19 @@ export default async function FreshHarvestPage({
       {/* Category tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
         {CATS.map(c => (
-          <Link key={c} href={`/fresh-harvest?category=${c}${search ? `&search=${encodeURIComponent(search)}` : ""}`}
+          <Link key={c}
+            href={`/fresh-harvest?category=${c}${search ? `&search=${encodeURIComponent(search)}` : ""}`}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition-colors ${
-              cat === c ? "bg-green-600 text-white border-green-600" : "bg-white text-gray-600 border-gray-300 hover:border-green-500"
-            }`}>{c}</Link>
+              cat === c
+                ? "bg-green-600 text-white border-green-600"
+                : "bg-white text-gray-600 border-gray-300 hover:border-green-500"
+            }`}>{c}
+          </Link>
         ))}
       </div>
 
       <p className="text-sm text-gray-500 mb-5">
-        {products.length} certified products available
+        {products.length} unique products · click to see all sellers &amp; compare prices
       </p>
 
       {products.length === 0 ? (
@@ -150,39 +159,16 @@ export default async function FreshHarvestPage({
           <Link href="/fresh-harvest" className="text-green-600 text-sm mt-2 inline-block">Clear filters</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-          {products.map(p => (
-            <div key={p.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
-              <div className="relative h-48 bg-gray-100 overflow-hidden">
-                <img src={p.resolved_image} alt={p.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                {p.is_organic && <span className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">🌱 Organic</span>}
-                <span className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">✓ Certified</span>
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-900 text-sm leading-tight">{p.name}</h3>
-                <p className="text-xs text-gray-400 mt-0.5 capitalize">{p.category}</p>
-                <p className="text-xs text-gray-500 mt-1">📍 {p.farm_district} · {p.farmer_name}</p>
-                <p className="text-green-700 font-bold mt-2">
-                  ₹{p.price_per_unit}<span className="text-xs text-gray-400 font-normal">/{p.unit}</span>
-                </p>
-                <AddToCartButton product={{
-                  id: p.id, name: p.name, image: p.resolved_image,
-                  price: Number(p.price_per_unit), unit: p.unit,
-                  farmer: p.farmer_name, district: p.farm_district,
-                  farmer_id: p.farmer_id,
-                  stock: Number(p.available_qty),
-                }} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <ProductGrid products={products} />
       )}
 
       <div className="mt-12 bg-green-50 border border-green-200 rounded-xl p-6 text-center">
         <p className="text-green-800 font-semibold">🌾 Are you a farmer?</p>
         <p className="text-green-700 text-sm mt-1">List your produce and reach thousands of customers.</p>
-        <Link href="/auth?role=farmer" className="inline-block mt-3 bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700">Register as Farmer</Link>
+        <Link href="/auth?role=farmer"
+          className="inline-block mt-3 bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700">
+          Register as Farmer
+        </Link>
       </div>
     </div>
   );
