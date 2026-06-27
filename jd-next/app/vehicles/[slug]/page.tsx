@@ -2,6 +2,7 @@ import { query } from "../../../lib/db";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import FinanceWidget from "./FinanceWidget";
+import DealerCTAButtons from "./DealerCTAButtons";
 
 export const dynamic = "force-dynamic";
 
@@ -279,17 +280,11 @@ export default async function VehicleDetailPage({
                   </div>
 
                   {/* CTAs */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <a href={`tel:${d.dealer_phone}`}
-                      className="flex items-center justify-center gap-2 bg-green-600 text-white py-2.5 rounded-xl font-semibold hover:bg-green-700 transition-colors text-sm">
-                      📞 Call Dealer
-                    </a>
-                    <button
-                      onClick={() => {}}
-                      className="flex items-center justify-center gap-2 border-2 border-green-600 text-green-700 py-2.5 rounded-xl font-semibold hover:bg-green-50 transition-colors text-sm">
-                      📅 Book Test Drive
-                    </button>
-                  </div>
+                  <DealerCTAButtons
+                    phone={d.dealer_phone}
+                    dealerName={d.dealer_name}
+                    vehicleName={d.name}
+                  />
                 </div>
               </div>
             );
