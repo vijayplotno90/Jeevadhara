@@ -10,7 +10,6 @@ interface ToolRow {
   min_price: number;
   max_price: number;
   seller_count: number;
-  conditions: string; // "new" | "used" | "new,used"
 }
 
 interface SellerRow {
@@ -52,7 +51,6 @@ const TOOL_EMOJIS: Record<string, string> = {
 export default function ImplementsPage() {
   const [tools, setTools] = useState<ToolRow[]>([]);
   const [cat, setCat] = useState("all");
-  const [condFilter, setCondFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<{ open: boolean; slug: string; name: string }>({
     open: false,
@@ -72,13 +70,7 @@ export default function ImplementsPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = tools.filter((t) => {
-    const catOk = cat === "all" || t.category === cat;
-    const condOk =
-      condFilter === "all" ||
-      (t.conditions || "").split(",").includes(condFilter);
-    return catOk && condOk;
-  });
+  const filtered = tools.filter((t) => cat === "all" || t.category === cat);
 
   function openModal(slug: string, name: string) {
     setModal({ open: true, slug, name });
@@ -104,7 +96,7 @@ export default function ImplementsPage() {
       <div className="bg-gradient-to-r from-orange-600 to-amber-500 text-white px-4 py-8">
         <h1 className="text-2xl font-bold">🛠️ Farm Tools & Implements</h1>
         <p className="text-orange-100 text-sm mt-1">
-          Hand tools, powered equipment — new &amp; used, from verified sellers
+          Hand tools &amp; powered equipment — all new, from verified sellers
         </p>
       </div>
 
@@ -123,24 +115,6 @@ export default function ImplementsPage() {
             {label}
           </button>
         ))}
-        <div className="h-6 w-px bg-gray-200 self-center" />
-        {["all", "new", "used"].map((c) => (
-          <button
-            key={c}
-            onClick={() => setCondFilter(c)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              condFilter === c
-                ? c === "new"
-                  ? "bg-green-600 text-white"
-                  : c === "used"
-                  ? "bg-amber-600 text-white"
-                  : "bg-gray-800 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-orange-50"
-            }`}
-          >
-            {c === "all" ? "All Condition" : c.charAt(0).toUpperCase() + c.slice(1)}
-          </button>
-        ))}
       </div>
 
       {/* Grid */}
@@ -151,10 +125,7 @@ export default function ImplementsPage() {
           <div className="text-center py-16 text-gray-400">No tools found.</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {filtered.map((t) => {
-              const hasNew = (t.conditions || "").includes("new");
-              const hasUsed = (t.conditions || "").includes("used");
-              return (
+            {filtered.map((t) => (
                 <button
                   key={t.slug}
                   onClick={() => openModal(t.slug, t.name)}
@@ -175,19 +146,6 @@ export default function ImplementsPage() {
                         {TOOL_EMOJIS[t.slug] || "🔧"}
                       </span>
                     )}
-                    {/* condition badges */}
-                    <div className="absolute top-2 right-2 flex flex-col gap-1">
-                      {hasNew && (
-                        <span className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-                          New
-                        </span>
-                      )}
-                      {hasUsed && (
-                        <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-                          Used
-                        </span>
-                      )}
-                    </div>
                   </div>
 
                   {/* Info */}
@@ -215,8 +173,7 @@ export default function ImplementsPage() {
                     </div>
                   </div>
                 </button>
-              );
-            })}
+            ))}
           </div>
         )}
       </div>
@@ -261,22 +218,11 @@ export default function ImplementsPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              s.condition === "new"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {s.condition === "new" ? "New" : "Used"}
+                        {s.brand && (
+                          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                            {s.brand}
                           </span>
-                          {s.brand && (
-                            <span className="text-xs text-gray-500 font-medium">
-                              {s.brand}
-                            </span>
-                          )}
-                        </div>
+                        )}
                         <p className="text-gray-700 text-sm mt-1 leading-snug">
                           {s.description}
                         </p>

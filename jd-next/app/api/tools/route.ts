@@ -13,8 +13,7 @@ export async function GET() {
          MIN(image_url)   AS image_url,
          MIN(price)       AS min_price,
          MAX(price)       AS max_price,
-         COUNT(*)::int    AS seller_count,
-         STRING_AGG(DISTINCT condition, ',') AS conditions
+         COUNT(*)::int    AS seller_count
        FROM tools
        WHERE is_active = TRUE
        GROUP BY slug
