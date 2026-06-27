@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { query } from "../../../lib/db";
 
 export const dynamic = "force-dynamic";
@@ -82,19 +82,50 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(rows);
     }
 
-    // products tab — join with farmer info
+    if (tab === "tools") {
+      const rows = await query(
+        `SELECT t.id, t.name, t.slug, t.category, t.brand, t.condition,
+                t.price, t.unit, t.stock, t.image_url, t.description,
+                t.district, t.village, t.is_active, t.created_at,
+                u.name AS seller_name, u.phone AS seller_phone, t.seller_id
+         FROM tools t
+         LEFT JOIN users u ON u.id::text = t.seller_id::text
+         ORDER BY t.is_active ASC, t.created_at DESC`
+      );
+      return NextResponse.json(rows);
+    }
+
+    if (tab === "vehicles") {
+      const rows = await query(
+        `SELECT v.id, v.name, v.vehicle_type, v.brand, v.model, v.year,
+                v.condition, v.price, v.image_url, v.description,
+                v.district, v.village, v.is_active, v.created_at,
+                u.name AS seller_name, u.phone AS seller_phone, v.seller_id
+         FROM vehicles v
+         LEFT JOIN users u ON u.id::text = v.seller_id::text
+         ORDER BY v.is_active ASC, v.created_at DESC`
+      );
+      return NextResponse.json(rows);
+    }
+
+    if (tab === "livestock") {
+      const rows = await query(
+        `SELECT l.id, l.name, l.breed, l.category AS livestock_category,
+                l.price, l.quantity, l.image_url, l.description,
+                l.district, l.village, l.is_active, l.created_at,
+                u.name AS seller_name, u.phone AS seller_phone, l.seller_id
+         FROM livestock l
+         LEFT JOIN users u ON u.id::text = l.seller_id::text
+         ORDER BY l.is_active ASC, l.created_at DESC`
+      );
+      return NextResponse.json(rows);
+    }
+
+    // Default: products tab
     const rows = await query(
       `SELECT
-         p.id,
-         p.name,
-         p.category,
-         p.price,
-         p.unit,
-         p.stock,
-         p.image_url,
-         p.description,
-         p.district,
-         p.is_active,
+         p.id, p.name, p.category, p.price, p.unit, p.stock,
+         p.image_url, p.description, p.district, p.is_active,
          COALESCE(p.is_organic, FALSE) AS is_organic,
          p.created_at,
          u.name  AS farmer_name,
@@ -120,51 +151,60 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { product_id, action } = body;
+    const { product_id, action, listing_type } = body;
+    const lt: string = listing_type || "product";
     if (!product_id) return NextResponse.json({ error: "product_id required" }, { status: 400 });
 
+    const TABLE_MAP: Record<string, string> = {
+      product:   "products",
+      tool:      "tools",
+      vehicle:   "vehicles",
+      livestock: "livestock",
+    };
+    const tbl = TABLE_MAP[lt] || "products";
+
     if (action === "deactivate") {
-      await query("UPDATE products SET is_active = FALSE WHERE id = $1", [product_id]);
+      await query(`UPDATE ${tbl} SET is_active = FALSE WHERE id::text = $1::text`, [product_id]);
       return NextResponse.json({ success: true, certified: false });
     }
 
-    if (action === "edit") {
-      // Admin edits product fields without certifying
-      const { price, is_organic, name, description, stock } = body;
-      const setClauses: string[] = [];
-      const params: unknown[] = [];
-
-      if (price !== undefined)       { params.push(parseFloat(price)); setClauses.push(`price = $${params.length}`); }
-      if (is_organic !== undefined)  { params.push(Boolean(is_organic)); setClauses.push(`is_organic = $${params.length}`); }
-      if (name !== undefined)        { params.push(name); setClauses.push(`name = $${params.length}`); }
-      if (description !== undefined) { params.push(description); setClauses.push(`description = $${params.length}`); }
-      if (stock !== undefined)       { params.push(parseFloat(stock)); setClauses.push(`stock = $${params.length}`); }
-
-      if (setClauses.length === 0)
-        return NextResponse.json({ error: "No fields to update" }, { status: 400 });
-
-      params.push(product_id);
-      await query(
-        `UPDATE products SET ${setClauses.join(", ")} WHERE id = $${params.length}`,
-        params
-      );
-      return NextResponse.json({ success: true, action: "edited" });
-    }
-
-    // Default: certify — optionally update editable fields AND activate in one call
-    const { price, is_organic, name, description, stock } = body;
     const setClauses: string[] = ["is_active = TRUE"];
     const params: unknown[] = [];
 
-    if (price !== undefined)       { params.push(parseFloat(price)); setClauses.push(`price = $${params.length}`); }
-    if (is_organic !== undefined)  { params.push(Boolean(is_organic)); setClauses.push(`is_organic = $${params.length}`); }
-    if (name !== undefined)        { params.push(name); setClauses.push(`name = $${params.length}`); }
-    if (description !== undefined) { params.push(description); setClauses.push(`description = $${params.length}`); }
-    if (stock !== undefined)       { params.push(parseFloat(stock)); setClauses.push(`stock = $${params.length}`); }
+    const { price, name, description, stock } = body;
+
+    if (price !== undefined && price !== null) {
+      params.push(parseFloat(price));
+      setClauses.push(`price = $${params.length}`);
+    }
+
+    const isNotLivestock = lt !== "livestock";
+    if (name !== undefined && name !== null && isNotLivestock) {
+      params.push(name);
+      setClauses.push(`name = $${params.length}`);
+    }
+
+    if (description !== undefined && description !== null) {
+      params.push(description);
+      setClauses.push(`description = $${params.length}`);
+    }
+
+    if (stock !== undefined && stock !== null && lt === "livestock") {
+      params.push(parseFloat(stock));
+      setClauses.push(`quantity = $${params.length}`);
+    } else if (stock !== undefined && stock !== null && lt === "tool") {
+      params.push(parseFloat(stock));
+      setClauses.push(`stock = $${params.length}`);
+    }
+
+    if (body.is_organic !== undefined && tbl === "products") {
+      params.push(Boolean(body.is_organic));
+      setClauses.push(`is_organic = $${params.length}`);
+    }
 
     params.push(product_id);
     await query(
-      `UPDATE products SET ${setClauses.join(", ")} WHERE id = $${params.length}`,
+      `UPDATE ${tbl} SET ${setClauses.join(", ")} WHERE id::text = $${params.length}::text`,
       params
     );
     return NextResponse.json({ success: true, certified: true });
