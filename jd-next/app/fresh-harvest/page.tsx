@@ -46,7 +46,7 @@ function getImg(name: string, image_url: string | null): string {
   for (const [key, val] of Object.entries(IMAGE_MAP)) {
     if (k.split(" ").some(word => word.length > 3 && key.includes(word))) return val;
   }
-  return "/products/sona masoori rice.jpg";
+  return "/products/organic tomatoes.jpg";
 }
 
 const CATS = ["All","Vegetables","Fruits","Grains","Pulses","Spices","Honey","Eggs","Mushrooms"];
@@ -73,7 +73,19 @@ export default async function FreshHarvestPage({
   const search = searchParams?.search   || "";
 
   const params: unknown[] = [];
-  let where = "WHERE p.is_active = TRUE";
+  // Exclude nursery/plantation items and processed honey products
+  let where = `WHERE p.is_active = TRUE
+    AND LOWER(COALESCE(p.category,'')) NOT LIKE '%nursery%'
+    AND LOWER(COALESCE(p.category,'')) NOT LIKE '%plantation%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%sapling%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%tc plant%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%teak%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%mellifera%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%apis cerana%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%beeswax%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%propolis%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%royal jelly%'
+    AND LOWER(COALESCE(p.name,'')) NOT LIKE '%honeycomb%'`;
   if (cat !== "All") {
     params.push(`%${cat.toLowerCase()}%`);
     where += ` AND LOWER(COALESCE(p.category,'')) LIKE $${params.length}`;
@@ -161,14 +173,14 @@ export default async function FreshHarvestPage({
         <div className="text-center py-20 text-gray-400">
           <p className="text-5xl mb-4">🌾</p>
           <p className="text-lg">No products found</p>
-          <Link href="/fresh-harvest" className="text-green-600 text-sm mt-2 inline-block">Clear filters</Link>
+                  <Link href="/fresh-harvest" className="text-green-600 text-sm mt-2 inline-block">Clear filters</Link>
         </div>
       ) : (
         <ProductGrid products={products} />
       )}
 
       <div className="mt-12 bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-        <p className="text-green-800 font-semibold">🌾 Are you a farmer?</p>
+        <p className="text-green-800 font-semibold">Are you a farmer?</p>
         <p className="text-green-700 text-sm mt-1">List your produce and reach thousands of customers.</p>
         <Link href="/auth?role=farmer"
           className="inline-block mt-3 bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700">

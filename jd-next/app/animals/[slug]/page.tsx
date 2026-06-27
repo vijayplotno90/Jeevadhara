@@ -154,7 +154,7 @@ export default async function LivestockDetailPage({
 
       {/* Sellers */}
       <h2 className="text-xl font-bold text-gray-900 mb-4">
-        Available Animals ({sellers.length} sellers)
+        {first.category === "fish" ? "Available Fingerlings" : "Available Animals"} ({sellers.length} sellers)
       </h2>
 
       <div className="space-y-4 mb-8">

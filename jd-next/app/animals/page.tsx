@@ -9,7 +9,7 @@ const CATS = [
   { value: "buffalo", label: "🐃 Buffalo" },
   { value: "poultry", label: "🐔 Poultry" },
   { value: "sheep",   label: "🐑 Sheep" },
-  { value: "fish",    label: "🐟 Fish" },
+  { value: "fish",    label: "🐟 Fish Seeds" },
 ];
 
 const CAT_COLOR: Record<string, string> = {
@@ -77,7 +77,7 @@ export default async function AnimalsPage({
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">🐄 Livestock Bazaar</h1>
-        <p className="text-gray-500 mt-1">Verified breeds · Vet-certified · Buy direct from Telangana farmers</p>
+        <p className="text-gray-500 mt-1">Verified breeds · Vet-certified · Buy direct from Telangana farmers · Fish Seeds for pond stocking</p>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
@@ -155,7 +155,7 @@ export default async function AnimalsPage({
                   )}
                   {b.category === "fish" && (
                     <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
-                      🐟 Aquaculture Ready
+                      🐟 Fingerlings — stock your pond
                     </span>
                   )}
                 </div>
@@ -183,8 +183,8 @@ export default async function AnimalsPage({
         <Link href="/auth?role=farmer"
           className="inline-block mt-3 bg-amber-500 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-amber-600">
           Register as Farmer
-        </Link>
-      </div>
+          </Link>
+        </div>
     </div>
   );
 }
