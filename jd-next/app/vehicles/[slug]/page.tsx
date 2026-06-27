@@ -106,7 +106,7 @@ export default async function VehicleDetailPage({
     const minEx = Math.min(...dealers.map(d => Number(d.price)));
     const maxEx = Math.max(...dealers.map(d => Number(d.price)));
     const minOnRoad = Math.min(...dealers.filter(d => d.on_road_price).map(d => Number(d.on_road_price)));
-    const allColors = [...new Set(dealers.flatMap(d => (d.colors_available || "").split(",").map(c => c.trim()).filter(Boolean)))];
+    const allColors = Array.from(new Set(dealers.flatMap(d => (d.colors_available || "").split(",").map(c => c.trim()).filter(Boolean))));
     const maxWarranty = Math.max(...dealers.map(d => d.warranty_years || 0));
 
     return (
