@@ -10,7 +10,7 @@ interface CartItem {
   district: string; qty: number; farmer_id?: string;
 }
 
-const UPI_ID = "jeevadhara@okicici";  // change to real UPI ID before go-live
+const UPI_ID = "618144216@icici";
 
 export default function CheckoutPage() {
   const router = useRouter();

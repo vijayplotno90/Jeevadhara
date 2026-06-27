@@ -23,6 +23,65 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(rows);
     }
 
+    if (tab === "customers") {
+      const rows = await query(
+        `SELECT
+           u.id, u.name, u.phone, u.district, u.village, u.created_at,
+           COUNT(o.id)::int            AS order_count,
+           COALESCE(SUM(o.total_price),0) AS total_spent,
+           MAX(o.created_at)           AS last_order
+         FROM users u
+         LEFT JOIN orders o ON o.customer_id::text = u.id::text
+         WHERE u.role = 'consumer'
+         GROUP BY u.id, u.name, u.phone, u.district, u.village, u.created_at
+         ORDER BY total_spent DESC`
+      );
+      return NextResponse.json(rows);
+    }
+
+    if (tab === "analytics") {
+      const rows = await query(
+        `SELECT
+           f.id            AS farmer_id,
+           f.name          AS farmer_name,
+           f.phone         AS farmer_phone,
+           f.district,
+           f.village,
+           COUNT(DISTINCT o.customer_id)::int  AS unique_customers,
+           COUNT(o.id)::int                    AS total_orders,
+           COALESCE(SUM(o.total_price), 0)     AS total_revenue,
+           MAX(o.created_at)                   AS last_order
+         FROM users f
+         LEFT JOIN orders o ON o.farmer_id::text = f.id::text
+         WHERE f.role = 'farmer'
+         GROUP BY f.id, f.name, f.phone, f.district, f.village
+         ORDER BY total_revenue DESC`
+      );
+      return NextResponse.json(rows);
+    }
+
+    if (tab === "farmer_customers") {
+      const farmer_id = new URL(req.url).searchParams.get("farmer_id");
+      if (!farmer_id) return NextResponse.json({ error: "farmer_id required" }, { status: 400 });
+      const rows = await query(
+        `SELECT
+           c.id AS customer_id,
+           c.name AS customer_name,
+           c.phone AS customer_phone,
+           c.district AS customer_district,
+           COUNT(o.id)::int               AS order_count,
+           COALESCE(SUM(o.total_price),0) AS total_spent,
+           MAX(o.created_at)              AS last_order
+         FROM orders o
+         JOIN users c ON c.id::text = o.customer_id::text
+         WHERE o.farmer_id::text = $1
+         GROUP BY c.id, c.name, c.phone, c.district
+         ORDER BY total_spent DESC`,
+        [farmer_id]
+      );
+      return NextResponse.json(rows);
+    }
+
     // products tab — join with farmer info
     const rows = await query(
       `SELECT
