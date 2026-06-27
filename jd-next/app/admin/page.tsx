@@ -8,12 +8,23 @@ interface Product { id: string; name: string; category: string; price: number; u
 interface Customer { id: string; name: string; phone: string; district: string; village: string; created_at: string; order_count: number; total_spent: number; last_order: string | null; }
 interface FarmerAnalytics { farmer_id: string; farmer_name: string; farmer_phone: string; district: string; village: string; unique_customers: number; total_orders: number; total_revenue: number; last_order: string | null; }
 interface FarmerCustomer { customer_id: string; customer_name: string; customer_phone: string; customer_district: string; order_count: number; total_spent: number; last_order: string; }
+interface FarmerEnquiry { id: string; service_category: string; provider_name: string; provider_phone: string; enquiry_type: string; created_at: string; }
 interface ToolListing { id: string; name: string; slug: string; category: string; brand: string; condition: string; price: number; unit: string; stock: number; image_url: string | null; description: string; district: string; village: string; is_active: boolean; created_at: string; seller_name: string; seller_phone: string; seller_id: string; }
 interface VehicleListing { id: string; name: string; vehicle_type: string; brand: string; model: string; year: number; condition: string; price: number; image_url: string | null; description: string; district: string; village: string; is_active: boolean; created_at: string; seller_name: string; seller_phone: string; seller_id: string; }
 interface LivestockListing { id: string; name: string; breed: string; livestock_category: string; price: number; quantity: number; image_url: string | null; description: string; district: string; village: string; is_active: boolean; created_at: string; seller_name: string; seller_phone: string; seller_id: string; }
 
 type EditDraft = { price: string; is_organic: boolean; name: string; }
 type TabType = "pending" | "active" | "farmers" | "customers" | "analytics" | "tools" | "vehicles" | "livestock";
+
+const CAT_LABELS: Record<string, string> = {
+  finance: "Banking & Finance", borewell: "Borewell & Water",
+  insurance: "Insurance", storage: "Storage", seeds: "Seeds & Inputs",
+  irrigation: "Irrigation", drones: "Drones & Spraying", transport: "Transport",
+  soil: "Soil Testing", vet: "Veterinary", solar: "Solar & Power",
+  construction: "Farm Construction", equipment: "Equipment", telecom: "Agri-Tech",
+  training: "Training", certification: "Certification", cooperative: "Cooperatives",
+  media: "Agri Media", pest: "Pest Control", organic: "Organic Cert",
+};
 
 function getNotes(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem("jd_cert_notes") || "{}"); } catch { return {}; }
@@ -41,8 +52,9 @@ export default function AdminPage() {
   const [notes,     setNotes]     = useState<Record<string, string>>({});
   const [expanded,  setExpanded]  = useState<string | null>(null);
   const [drafts,    setDrafts]    = useState<Record<string, EditDraft>>({});
-  const [farmerCusts, setFarmerCusts] = useState<Record<string, FarmerCustomer[]>>({});
-  const [loadingFC,   setLoadingFC]   = useState<string | null>(null);
+  const [farmerCusts, setFarmerCusts]       = useState<Record<string, FarmerCustomer[]>>({});
+  const [farmerEnquiries, setFarmerEnquiries] = useState<Record<string, FarmerEnquiry[]>>({});
+  const [loadingFC, setLoadingFC] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,10 +126,22 @@ export default function AdminPage() {
   async function toggleFarmerExpand(farmerId: string) {
     if (expanded === farmerId) { setExpanded(null); return; }
     setExpanded(farmerId);
-    if (!farmerCusts[farmerId]) {
+    const needsCusts = !farmerCusts[farmerId];
+    const needsEnqs  = !farmerEnquiries[farmerId];
+    if (needsCusts || needsEnqs) {
       setLoadingFC(farmerId);
-      const res = await fetch(`/api/admin?tab=farmer_customers&farmer_id=${farmerId}`, { headers: { "x-admin-auth": ADMIN_AUTH } });
-      if (res.ok) { const data = await res.json(); setFarmerCusts(fc => ({ ...fc, [farmerId]: data })); }
+      const fetches: Promise<void>[] = [];
+      if (needsCusts) fetches.push(
+        fetch(`/api/admin?tab=farmer_customers&farmer_id=${farmerId}`, { headers: { "x-admin-auth": ADMIN_AUTH } })
+          .then(r => r.ok ? r.json() : [])
+          .then((data: FarmerCustomer[]) => setFarmerCusts(fc => ({ ...fc, [farmerId]: data })))
+      );
+      if (needsEnqs) fetches.push(
+        fetch(`/api/admin?tab=farmer_enquiries&farmer_id=${farmerId}`, { headers: { "x-admin-auth": ADMIN_AUTH } })
+          .then(r => r.ok ? r.json() : [])
+          .then((data: FarmerEnquiry[]) => setFarmerEnquiries(fe => ({ ...fe, [farmerId]: data })))
+      );
+      await Promise.all(fetches);
       setLoadingFC(null);
     }
   }
@@ -149,13 +173,13 @@ export default function AdminPage() {
     </div>
   );
 
-  const pendingProds   = prods.filter(p => !p.is_active);
-  const activeProds    = prods.filter(p =>  p.is_active);
-  const pendingTools   = tools.filter(t => !t.is_active);
+  const pendingProds    = prods.filter(p => !p.is_active);
+  const activeProds     = prods.filter(p =>  p.is_active);
+  const pendingTools    = tools.filter(t => !t.is_active);
   const pendingVehicles = vehicles.filter(v => !v.is_active);
   const pendingLivestock = livestock.filter(l => !l.is_active);
-  const totalPending   = pendingProds.length + pendingTools.length + pendingVehicles.length + pendingLivestock.length;
-  const totalRevenue   = analytics.reduce((s, a) => s + Number(a.total_revenue), 0);
+  const totalPending    = pendingProds.length + pendingTools.length + pendingVehicles.length + pendingLivestock.length;
+  const totalRevenue    = analytics.reduce((s, a) => s + Number(a.total_revenue), 0);
 
   /* ── Generic listing card for tools/vehicles/livestock ── */
   function ListingCard({
@@ -187,9 +211,7 @@ export default function AdminPage() {
             <div className="mt-2 inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5">
               <span className="text-xs text-gray-500">Seller:</span>
               <span className="text-sm font-medium text-gray-800">{sellerName || "Unknown"}</span>
-              {sellerPhone && <a href={`tel:${sellerPhone}`} className="text-sm font-semibold text-blue-700 hover:text-blue-900">
-                {sellerPhone}
-              </a>}
+              {sellerPhone && <a href={`tel:${sellerPhone}`} className="text-sm font-semibold text-blue-700 hover:text-blue-900">{sellerPhone}</a>}
             </div>
           </div>
           <div className="flex-shrink-0 flex flex-col gap-2">
@@ -300,7 +322,7 @@ export default function AdminPage() {
         ) : tab === "analytics" ? (
           <div className="space-y-3">
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800 mb-4">
-              <strong>Platform Performance</strong> · Click any farmer to see their customer breakdown.
+              <strong>Platform Performance</strong> · Click any farmer to see customers + service enquiries.
             </div>
             {analytics.length === 0 ? (
               <div className="bg-white rounded-xl p-12 text-center border"><p className="text-gray-400">No data yet.</p></div>
@@ -330,28 +352,75 @@ export default function AdminPage() {
                   </div>
                 </button>
                 {expanded === fa.farmer_id && (
-                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                  <div className="border-t border-gray-100 bg-gray-50 px-4 py-4">
                     {loadingFC === fa.farmer_id ? (
-                      <p className="text-sm text-gray-400 py-4 text-center">Loading customers...</p>
-                    ) : (farmerCusts[fa.farmer_id] || []).length === 0 ? (
-                      <p className="text-sm text-gray-400 py-4 text-center">No orders yet.</p>
+                      <p className="text-sm text-gray-400 py-4 text-center">Loading farmer data...</p>
                     ) : (
-                      <div className="space-y-2">
-                        {(farmerCusts[fa.farmer_id] || []).map(c => (
-                          <div key={c.customer_id} className="bg-white rounded-lg border border-gray-100 px-4 py-2.5 flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-gray-800">{c.customer_name}</p>
-                              <p className="text-xs text-gray-500">
-                                <a href={`tel:${c.customer_phone}`} className="text-blue-600 hover:underline">{c.customer_phone}</a>
-                                {c.customer_district ? ` · ${c.customer_district}` : ""}
-                              </p>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* Customers column */}
+                        <div>
+                          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+                            Customers ({(farmerCusts[fa.farmer_id] || []).length})
+                          </h4>
+                          {(farmerCusts[fa.farmer_id] || []).length === 0 ? (
+                            <p className="text-sm text-gray-400 py-2">No orders yet.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {(farmerCusts[fa.farmer_id] || []).map(c => (
+                                <div key={c.customer_id} className="bg-white rounded-lg border border-gray-100 px-3 py-2 flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-800">{c.customer_name}</p>
+                                    <p className="text-xs text-gray-500">
+                                      <a href={`tel:${c.customer_phone}`} className="text-blue-600 hover:underline">{c.customer_phone}</a>
+                                      {c.customer_district ? ` · ${c.customer_district}` : ""}
+                                    </p>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <p className="text-sm font-semibold text-green-700">Rs{Number(c.total_spent).toFixed(0)}</p>
+                                    <p className="text-xs text-gray-400">{c.order_count} order{c.order_count !== 1 ? "s" : ""}</p>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <div className="text-right">
-                              <p className="text-sm font-semibold text-green-700">Rs{Number(c.total_spent).toFixed(0)}</p>
-                              <p className="text-xs text-gray-400">{c.order_count} order{c.order_count !== 1 ? "s" : ""}</p>
+                          )}
+                        </div>
+                        {/* Service Enquiries column */}
+                        <div>
+                          <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+                            Service Enquiries ({(farmerEnquiries[fa.farmer_id] || []).length})
+                          </h4>
+                          {(farmerEnquiries[fa.farmer_id] || []).length === 0 ? (
+                            <p className="text-sm text-gray-400 py-2">No service enquiries yet.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {(farmerEnquiries[fa.farmer_id] || []).map(e => (
+                                <div key={e.id} className="bg-white rounded-lg border border-blue-50 px-3 py-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <span className="text-xs font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                                        {CAT_LABELS[e.service_category] || e.service_category}
+                                      </span>
+                                      <p className="text-sm font-medium text-gray-800 mt-1">{e.provider_name || "—"}</p>
+                                      {e.provider_phone && (
+                                        <a href={`tel:${e.provider_phone}`} className="text-xs text-blue-600 hover:underline">{e.provider_phone}</a>
+                                      )}
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                                        e.enquiry_type === "call" ? "bg-green-100 text-green-700" :
+                                        e.enquiry_type === "website" ? "bg-purple-100 text-purple-700" :
+                                        "bg-orange-100 text-orange-700"
+                                      }`}>
+                                        {e.enquiry_type === "call" ? "Called" : e.enquiry_type === "website" ? "Website" : "Enquired"}
+                                      </span>
+                                      <p className="text-xs text-gray-400 mt-1">{new Date(e.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short" })}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          </div>
-                        ))}
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

@@ -260,7 +260,31 @@ const CAT_SHORT: Record<string, string> = {
   cctv: "CCTV", fodder: "Fodder", microgreens: "Microgreens", pestlab: "Pest Lab",
 };
 
-function ProviderCard({ p }: { p: Provider }) {
+function ProviderCard({ p, category }: { p: Provider; category: string }) {
+  const [enquired, setEnquired] = useState(false);
+  const [enquiring, setEnquiring] = useState(false);
+
+  async function logEnquiry(type: "call" | "website" | "enquire") {
+    const farmer_id    = typeof window !== "undefined" ? localStorage.getItem("jd_user_id") : null;
+    const farmer_name  = typeof window !== "undefined" ? localStorage.getItem("jd_name")    : null;
+    const farmer_phone = typeof window !== "undefined" ? localStorage.getItem("jd_phone")   : null;
+    try {
+      await fetch("/api/enquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ farmer_id, farmer_name, farmer_phone, service_category: category, provider_name: p.name, provider_phone: p.phone || null, enquiry_type: type }),
+      });
+    } catch { /* silent */ }
+  }
+
+  async function handleEnquire() {
+    setEnquiring(true);
+    await logEnquiry("enquire");
+    setEnquiring(false);
+    setEnquired(true);
+    setTimeout(() => setEnquired(false), 4000);
+  }
+
   return (
     <article className="flex flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md hover:border-green-300 transition">
       <h3 className="font-semibold text-sm text-gray-900 leading-snug">{p.name}</h3>
@@ -268,17 +292,23 @@ function ProviderCard({ p }: { p: Provider }) {
       {p.city && <p className="text-xs text-gray-400 mt-1">📍 {p.city}</p>}
       <div className="mt-3 flex gap-2 flex-wrap">
         {p.phone && (
-          <a href={`tel:${p.phone}`}
+          <a href={`tel:${p.phone}`} onClick={() => logEnquiry("call")}
             className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition">
             <Phone className="h-3 w-3" /> {p.phone}
           </a>
         )}
         {p.url && (
-          <a href={p.url} target="_blank" rel="noopener noreferrer"
+          <a href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => logEnquiry("website")}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:border-green-400 transition">
             <ExternalLink className="h-3 w-3" /> Website
           </a>
         )}
+        <button onClick={handleEnquire} disabled={enquiring || enquired}
+          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+            enquired ? "bg-green-100 text-green-700 border border-green-300" : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}>
+          {enquired ? "Enquired!" : enquiring ? "..." : "Enquire"}
+        </button>
       </div>
     </article>
   );
@@ -342,7 +372,7 @@ export default function ServicesPage() {
                   <span className="text-xl">{CAT_EMOJIS[fc.id] || "🔧"}</span> {fc.label}
                 </h3>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {fc.providers.map(p => <ProviderCard key={p.name} p={p} />)}
+                  {fc.providers.map(p => <ProviderCard key={p.name} p={p} category={fc.id} />)}
                 </div>
               </div>
             ))}
@@ -370,7 +400,7 @@ export default function ServicesPage() {
               <div className="absolute right-4 top-4 opacity-5 text-8xl select-none">{CAT_EMOJIS[cat.id]}</div>
               <div className="flex items-center gap-3 mb-3">
                 <div className={"grid h-12 w-12 place-items-center rounded-xl text-2xl " + cat.tint}>
-                  {CAT_EMOJIS[cat.id] || "🔧"}
+                  {CAT_EMOJIS[cat.id] || "Service"}
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">{cat.label}</h2>
@@ -382,13 +412,13 @@ export default function ServicesPage() {
 
             {/* Provider cards */}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {cat.providers.map(p => <ProviderCard key={p.name} p={p} />)}
+              {cat.providers.map(p => <ProviderCard key={p.name} p={p} category={cat.id} />)}
             </div>
 
             {/* CTA */}
             <div className="mt-8 rounded-2xl border-2 border-dashed border-green-300 bg-green-50 p-5 text-center">
               <p className="font-bold text-gray-900">Are you a {cat.label.toLowerCase()} provider?</p>
-              <p className="text-sm text-gray-500 mt-1">List free for the first year — reach verified farmers across Telangana.</p>
+              <p className="text-sm text-gray-500 mt-1">List free for the first year - reach verified farmers across Telangana.</p>
               <Link href="/auth/signup/provider"
                 className="mt-3 inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-green-700 transition">
                 <Wrench className="h-4 w-4" /> Sign up as Service Partner

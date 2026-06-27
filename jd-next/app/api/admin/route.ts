@@ -82,6 +82,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(rows);
     }
 
+    if (tab === "farmer_enquiries") {
+      const farmer_id = new URL(req.url).searchParams.get("farmer_id");
+      if (!farmer_id) return NextResponse.json({ error: "farmer_id required" }, { status: 400 });
+      try {
+        const rows = await query(
+          `SELECT id, service_category, provider_name, provider_phone, enquiry_type, notes, created_at
+           FROM enquiries WHERE farmer_id = $1 ORDER BY created_at DESC`,
+          [farmer_id]
+        );
+        return NextResponse.json(rows);
+      } catch {
+        return NextResponse.json([]); // table may not exist yet
+      }
+    }
+
     if (tab === "tools") {
       const rows = await query(
         `SELECT t.id, t.name, t.slug, t.category, t.brand, t.condition,
@@ -195,7 +210,7 @@ export async function PATCH(req: NextRequest) {
     } else if (stock !== undefined && stock !== null && lt === "tool") {
       params.push(parseFloat(stock));
       setClauses.push(`stock = $${params.length}`);
-    }
+       }
 
     if (body.is_organic !== undefined && tbl === "products") {
       params.push(Boolean(body.is_organic));
