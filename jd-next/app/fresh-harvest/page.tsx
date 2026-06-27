@@ -14,6 +14,7 @@ interface Product {
   farm_district: string;
   category: string;
   farmer_name: string;
+  farmer_id: string;
   is_organic: boolean;
 }
 
@@ -74,6 +75,7 @@ export default async function FreshHarvestPage({
               p.district    AS farm_district,
               p.category,
               COALESCE(p.is_organic, FALSE) AS is_organic,
+              p.farmer_id,
               u.name        AS farmer_name
        FROM products p
        JOIN users u ON u.id::text = p.farmer_id::text
@@ -146,7 +148,9 @@ export default async function FreshHarvestPage({
                 <AddToCartButton product={{
                   id: p.id, name: p.name, image: p.resolved_image,
                   price: Number(p.price_per_unit), unit: p.unit,
-                  farmer: p.farmer_name, district: p.farm_district
+                  farmer: p.farmer_name, district: p.farm_district,
+                  farmer_id: p.farmer_id,
+                  stock: Number(p.available_qty),
                 }} />
               </div>
             </div>

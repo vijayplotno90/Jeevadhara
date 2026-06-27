@@ -22,6 +22,22 @@ interface MandiRate {
   unit: string;
 }
 
+interface Order {
+  id: string;
+  product_name: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  total_price: number;
+  payment_method: string;
+  order_status: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_display_name: string;
+  delivery_address: string;
+  created_at: string;
+}
+
 const SERVICE_HUB = [
   { icon:"🐄", label:"Livestock Bazar", href:"/services/livestock", desc:"Buy/sell cattle, goats, poultry" },
   { icon:"🚜", label:"Vehicles & Tractors", href:"/services/vehicles", desc:"Rent tractors, tillers, harvesters" },
@@ -35,10 +51,12 @@ const SERVICE_HUB = [
 
 export default function FarmerDashboard() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [name, setName]         = useState("");
   const [products, setProducts] = useState<Product[]>([]);
-  const [rates, setRates] = useState<MandiRate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orders, setOrders]     = useState<Order[]>([]);
+  const [rates, setRates]       = useState<MandiRate[]>([]);
+  const [activeTab, setActiveTab] = useState<"products"|"orders">("products");
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     const role = localStorage.getItem("jd_role");
@@ -48,12 +66,14 @@ export default function FarmerDashboard() {
 
     async function load() {
       const userId = localStorage.getItem("jd_user_id") || "";
-      const [prodRes, rateRes] = await Promise.all([
+      const [prodRes, rateRes, orderRes] = await Promise.all([
         fetch(`/api/products?my=1&farmer_id=${encodeURIComponent(userId)}`),
         fetch("/api/mandi-rates?limit=5"),
+        fetch(`/api/orders?farmer_id=${encodeURIComponent(userId)}`),
       ]);
-      if (prodRes.ok) setProducts(await prodRes.json());
-      if (rateRes.ok) setRates(await rateRes.json());
+      if (prodRes.ok)  setProducts(await prodRes.json());
+      if (rateRes.ok)  setRates(await rateRes.json());
+      if (orderRes.ok) setOrders(await orderRes.json());
       setLoading(false);
     }
     load();
@@ -68,8 +88,10 @@ export default function FarmerDashboard() {
     </div>
   );
 
-  const activeCount = products.filter(p=>p.is_active).length;
-  const totalValue = products.reduce((s,p)=>s+(Number(p.price_per_unit)*Number(p.available_qty||0)),0);
+  const activeCount  = products.filter(p => p.is_active).length;
+  const totalValue   = products.reduce((s, p) => s + (Number(p.price_per_unit) * Number(p.available_qty || 0)), 0);
+  const totalRevenue = orders.reduce((s, o) => s + Number(o.total_price), 0);
+  const pendingOrders = orders.filter(o => o.order_status === "confirmed").length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -88,10 +110,10 @@ export default function FarmerDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label:"Active Listings", value:activeCount, icon:"📦", color:"green" },
-          { label:"Total Products", value:products.length, icon:"🌿", color:"blue" },
-          { label:"Est. Inventory Value", value:`₹${totalValue.toFixed(0)}`, icon:"💰", color:"yellow" },
-          { label:"Mandi Rates", value:rates.length, icon:"📊", color:"purple" },
+          { label:"Active Listings",  value: activeCount,              icon:"📦" },
+          { label:"Total Orders",     value: orders.length,            icon:"🛒" },
+          { label:"Revenue Earned",   value:`₹${totalRevenue.toFixed(0)}`, icon:"💰" },
+          { label:"Pending Dispatch", value: pendingOrders,            icon:"🚚" },
         ].map(s=>(
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="text-3xl mb-2">{s.icon}</div>
@@ -102,12 +124,71 @@ export default function FarmerDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* My Products */}
+        {/* My Products + Orders tabs */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">My Listed Produce</h2>
-            <Link href="/list-produce" className="text-green-600 text-sm font-medium hover:underline">+ Add New</Link>
+          <div className="flex gap-2 mb-4">
+            <button onClick={() => setActiveTab("products")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab==="products" ? "bg-green-600 text-white" : "bg-white border text-gray-600 hover:border-green-300"}`}>
+              📦 My Products ({products.length})
+            </button>
+            <button onClick={() => setActiveTab("orders")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab==="orders" ? "bg-green-600 text-white" : "bg-white border text-gray-600 hover:border-green-300"}`}>
+              🛒 Orders Received ({orders.length})
+            </button>
+            {activeTab === "products" && (
+              <Link href="/list-produce" className="ml-auto text-green-600 text-sm font-medium hover:underline self-center">+ Add New</Link>
+            )}
           </div>
+
+          {/* Orders tab */}
+          {activeTab === "orders" && (
+            <div className="space-y-3">
+              {orders.length === 0 ? (
+                <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-400">
+                  <p className="text-4xl mb-3">🛒</p>
+                  <p className="font-medium">No orders yet</p>
+                  <p className="text-sm mt-1">Orders from customers will appear here after admin certifies your products</p>
+                </div>
+              ) : orders.map(o => (
+                <div key={o.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-gray-800">{o.product_name}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          o.order_status === "confirmed" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {o.order_status === "confirmed" ? "✅ Confirmed" : o.order_status}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+                          {o.payment_method === "cod" ? "💵 COD" : o.payment_method === "upi" ? "📱 UPI Paid" : "💳 Card Paid"}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {o.quantity} {o.unit} × ₹{o.unit_price} = <strong className="text-green-700">₹{Number(o.total_price).toFixed(0)}</strong>
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        👤 {o.customer_display_name || o.customer_name}
+                        {o.customer_phone && (
+                          <> · <a href={`tel:${o.customer_phone}`} className="text-blue-600 hover:underline">📞 {o.customer_phone}</a></>
+                        )}
+                      </p>
+                      {o.delivery_address && (
+                        <p className="text-xs text-gray-400 mt-0.5">📍 {o.delivery_address}</p>
+                      )}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs text-gray-400">{new Date(o.created_at).toLocaleDateString("en-IN")}</p>
+                      <p className="text-xs text-gray-400">{new Date(o.created_at).toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit" })}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Products tab */}
+          {activeTab === "products" && (<div>
           {products.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-400">
               <p className="text-4xl mb-3">📦</p>
@@ -171,6 +252,8 @@ export default function FarmerDashboard() {
               </table>
             </div>
           </div>
+          </div>)}
+
         </div>
 
         {/* Service Hub sidebar */}

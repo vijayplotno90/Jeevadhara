@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface CartItem {
   id: string;
@@ -15,6 +16,7 @@ interface CartItem {
 }
 
 export default function CartPage() {
+  const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -141,8 +143,10 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button className="w-full mt-5 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                Place Order →
+              <button
+                onClick={() => router.push("/checkout")}
+                className="w-full mt-5 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition-colors">
+                Proceed to Checkout →
               </button>
 
               <p className="text-xs text-gray-400 text-center mt-3">
