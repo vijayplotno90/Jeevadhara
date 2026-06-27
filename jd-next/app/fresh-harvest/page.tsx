@@ -53,15 +53,15 @@ const CATS = ["All","Vegetables","Fruits","Grains","Pulses","Spices","Honey","Eg
 
 interface RawGroup {
   name: string;
-  category: string;
+  category: string | null;
   min_price: number;
   max_price: number;
   total_stock: number;
   seller_count: number;
   has_organic: boolean;
   image_url: string | null;
-  districts: string;
-  unit: string;
+  districts: string | null;
+  unit: string | null;
 }
 
 export default async function FreshHarvestPage({
@@ -84,38 +84,37 @@ export default async function FreshHarvestPage({
   }
 
   let products: GroupedProduct[] = [];
+  let dbError: string | null = null;
   try {
     const rows = await query<RawGroup>(
       `SELECT
-         MIN(p.name)                                          AS name,
-         p.category,
-         MIN(p.price)                                        AS min_price,
-         MAX(p.price)                                        AS max_price,
-         SUM(p.stock)::int                                   AS total_stock,
-         COUNT(p.id)::int                                    AS seller_count,
-         BOOL_OR(COALESCE(p.is_organic, FALSE))              AS has_organic,
-         (SELECT p2.image_url FROM products p2
-          WHERE LOWER(p2.name) = LOWER(p.name)
-            AND p2.is_active = TRUE
-            AND p2.image_url IS NOT NULL
-          LIMIT 1)                                           AS image_url,
-         STRING_AGG(DISTINCT p.district, ' · ')              AS districts,
-         MIN(p.unit)                                         AS unit
+         MIN(p.name)                              AS name,
+         MIN(p.category)                          AS category,
+         MIN(p.price)                             AS min_price,
+         MAX(p.price)                             AS max_price,
+         SUM(p.stock)::int                        AS total_stock,
+         COUNT(*)::int                            AS seller_count,
+         BOOL_OR(COALESCE(p.is_organic, FALSE))   AS has_organic,
+         MIN(p.image_url)                         AS image_url,
+         STRING_AGG(DISTINCT p.district, ', ')    AS districts,
+         MIN(p.unit)                              AS unit
        FROM products p
        ${where}
-       GROUP BY LOWER(p.name), p.category
-       ORDER BY seller_count DESC, min_price ASC`,
+       GROUP BY LOWER(p.name)
+       ORDER BY COUNT(*) DESC, MIN(p.price) ASC`,
       params
     );
 
     products = rows.map(r => ({
       ...r,
-      min_price:     Number(r.min_price),
-      max_price:     Number(r.max_price),
+      min_price:      Number(r.min_price),
+      max_price:      Number(r.max_price),
       resolved_image: getImg(r.name, r.image_url),
     }));
   } catch (e) {
-    console.error("Fresh Harvest query error:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("Fresh Harvest query error:", msg);
+    dbError = msg;
   }
 
   return (
@@ -151,6 +150,12 @@ export default async function FreshHarvestPage({
       <p className="text-sm text-gray-500 mb-5">
         {products.length} unique products · click to see all sellers &amp; compare prices
       </p>
+
+      {dbError && (
+        <div className="mb-4 bg-red-50 border border-red-300 text-red-800 text-xs p-3 rounded-lg font-mono break-all">
+          DB Error: {dbError}
+        </div>
+      )}
 
       {products.length === 0 ? (
         <div className="text-center py-20 text-gray-400">

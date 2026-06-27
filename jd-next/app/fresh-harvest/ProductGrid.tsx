@@ -3,15 +3,15 @@ import { useState } from "react";
 
 export interface GroupedProduct {
   name: string;
-  category: string;
+  category: string | null;
   min_price: number;
   max_price: number;
   total_stock: number;
   seller_count: number;
   has_organic: boolean;
   image_url: string | null;
-  districts: string;
-  unit: string;
+  districts: string | null;
+  unit: string | null;
   resolved_image: string;
 }
 
