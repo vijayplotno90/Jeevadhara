@@ -5,9 +5,9 @@ export const dynamic = "force-dynamic";
 
 const TYPE_TABS = [
   { value: "all",          label: "All Vehicles" },
-  { value: "tractor",      label: "🚜 Tractors" },
-  { value: "commercial",   label: "🚛 Commercial" },
-  { value: "construction", label: "🏗️ JCB / Earth-Moving" },
+  { value: "tractor",      label: "Tractors" },
+  { value: "commercial",   label: "Commercial" },
+  { value: "construction", label: "JCB / Earth-Moving" },
 ];
 
 const COND_TABS = [
@@ -82,23 +82,20 @@ export default async function VehiclesPage({
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">🚜 Farm Vehicle Bazaar</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Farm Vehicle Bazaar</h1>
         <p className="text-gray-500 mt-1">
-          <span className="text-green-700 font-semibold">New</span> — Authorized Dealers ·{" "}
+          <span className="text-green-700 font-semibold">New</span> — Authorized Dealers &middot;{" "}
           <span className="text-amber-700 font-semibold">Used</span> — Direct from Farmers
         </p>
       </div>
 
-      {/* Badge bar */}
       <div className="flex gap-3 flex-wrap mb-5">
-        {["🏦 Loan from 3 Banks", "🛡️ Insurance from 3 Banks", "🏢 Verified Dealers", "👤 Direct Farmer Listings"].map(b => (
+        {["Loan from 3 Banks", "Insurance from 3 Banks", "Verified Dealers", "Direct Farmer Listings"].map(b => (
           <span key={b} className="text-xs bg-green-50 text-green-800 border border-green-200 px-3 py-1 rounded-full font-medium">{b}</span>
         ))}
       </div>
 
-      {/* Type tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
         {TYPE_TABS.map(t => (
           <Link key={t.value} href={`/vehicles?type=${t.value}&condition=${vcond}`}
@@ -111,15 +108,14 @@ export default async function VehiclesPage({
         ))}
       </div>
 
-      {/* Condition filter */}
       <div className="flex gap-2 mb-6">
         {COND_TABS.map(c => (
           <Link key={c.value} href={`/vehicles?type=${vtype}&condition=${c.value}`}
             className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
               vcond === c.value
-                ? c.value === "new"   ? "bg-green-600 text-white border-green-600"
-                : c.value === "used"  ? "bg-amber-500 text-white border-amber-500"
-                :                       "bg-gray-700 text-white border-gray-700"
+                ? c.value === "new"  ? "bg-green-600 text-white border-green-600"
+                : c.value === "used" ? "bg-amber-500 text-white border-amber-500"
+                :                      "bg-gray-700 text-white border-gray-700"
                 : "bg-white text-gray-500 border-gray-300 hover:border-gray-400"
             }`}>{c.label}
           </Link>
@@ -127,7 +123,7 @@ export default async function VehiclesPage({
       </div>
 
       <p className="text-sm text-gray-500 mb-5">
-        {vehicles.length} listing{vehicles.length !== 1 ? "s" : ""} · Click to view dealers/sellers, specs &amp; finance options
+        {vehicles.length} listing{vehicles.length !== 1 ? "s" : ""} &middot; Click to view dealers/sellers, specs and finance options
       </p>
 
       {dbError && (
@@ -138,8 +134,7 @@ export default async function VehiclesPage({
 
       {vehicles.length === 0 && !dbError ? (
         <div className="text-center py-20 text-gray-400">
-          <p className="text-5xl mb-4">🚜</p>
-          <p>No vehicles listed in this category yet.</p>
+          <p className="text-5xl mb-4">No vehicles yet.</p>
           <Link href="/vehicles" className="text-green-600 text-sm mt-2 inline-block">View all</Link>
         </div>
       ) : (
@@ -152,20 +147,19 @@ export default async function VehiclesPage({
         </div>
       )}
 
-      {/* Bottom CTA */}
       <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
-          <p className="font-semibold text-green-900">🚜 Sell your used vehicle?</p>
-          <p className="text-green-700 text-sm mt-1">List direct — reach buyers across Telangana.</p>
-          <Link href="/auth?role=farmer"
+          <p className="font-semibold text-green-900">Sell your used vehicle?</p>
+          <p className="text-green-700 text-sm mt-1">List direct - reach buyers across Telangana.</p>
+          <Link href="/sell/vehicle"
             className="inline-block mt-3 bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-green-700">
             List Your Vehicle
           </Link>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-center">
-          <p className="font-semibold text-blue-900">🏢 Are you a dealer?</p>
+          <p className="font-semibold text-blue-900">Are you a dealer?</p>
           <p className="text-blue-700 text-sm mt-1">List new stock and connect with farm buyers.</p>
-          <Link href="/auth?role=dealer"
+          <Link href="/auth/signup/farmer"
             className="inline-block mt-3 bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
             Register as Dealer
           </Link>
@@ -175,27 +169,23 @@ export default async function VehiclesPage({
   );
 }
 
-// ─────────────────────────────────────────────
-// NEW VEHICLE CARD — Dealer showroom style
-// ─────────────────────────────────────────────
 function NewVehicleCard({ v, vtype, vcond }: { v: VehicleRow; vtype: string; vcond: string }) {
+  void vtype; void vcond;
   return (
     <Link href={`/vehicles/${v.slug}?condition=new`}
       className="bg-white rounded-2xl shadow-sm border border-green-200 overflow-hidden hover:shadow-lg transition-all group relative">
 
-      {/* Top ribbon */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold px-3 py-1.5 flex items-center justify-between">
-        <span>🏢 AUTHORIZED DEALER</span>
-        <span>{v.min_year === v.max_year ? v.min_year : `${v.min_year}–${v.max_year}`} STOCK</span>
+        <span>AUTHORIZED DEALER</span>
+        <span>{v.min_year === v.max_year ? v.min_year : `${v.min_year}-${v.max_year}`} STOCK</span>
       </div>
 
       <div className="relative h-52 bg-gray-100 overflow-hidden pt-7">
-        <img src={v.image_url || "/vehicles/Mahindra_575_DI_2021.jpg"} alt={v.name}
+        <img src={v.image_url || "/vehicles/placeholder.jpg"} alt={v.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        {/* HP badge */}
         {v.min_hp && (
           <span className="absolute bottom-2 right-2 bg-white/90 text-gray-800 text-xs px-2 py-0.5 rounded-full font-bold">
-            {v.min_hp === v.max_hp ? `${v.min_hp} HP` : `${v.min_hp}–${v.max_hp} HP`}
+            {v.min_hp === v.max_hp ? `${v.min_hp} HP` : `${v.min_hp}-${v.max_hp} HP`}
           </span>
         )}
         <span className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
@@ -206,49 +196,42 @@ function NewVehicleCard({ v, vtype, vcond }: { v: VehicleRow; vtype: string; vco
       <div className="p-4">
         <h3 className="font-bold text-gray-900 text-lg leading-tight">{v.name}</h3>
         <p className="text-xs text-gray-400 mt-0.5 truncate">
-          📍 {v.dealer_cities || v.districts || "Telangana"}
+          {v.dealer_cities || v.districts || "Telangana"}
         </p>
-
-        {/* Feature chips */}
         <div className="mt-2 flex gap-2 flex-wrap">
-          <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">✅ Warranty</span>
-          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">🏦 Finance</span>
-          <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">📅 Test Drive</span>
+          <span className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-medium">Warranty</span>
+          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">Finance</span>
+          <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">Test Drive</span>
         </div>
-
         <div className="mt-3 flex items-end justify-between">
           <div>
             <p className="text-xs text-gray-400">Ex-Showroom from</p>
-            <p className="text-green-700 font-bold text-xl">₹{Number(v.min_price).toLocaleString()}</p>
+            <p className="text-green-700 font-bold text-xl">Rs{Number(v.min_price).toLocaleString()}</p>
             {Number(v.max_price) > Number(v.min_price) && (
-              <p className="text-xs text-gray-400">up to ₹{Number(v.max_price).toLocaleString()}</p>
+              <p className="text-xs text-gray-400">up to Rs{Number(v.max_price).toLocaleString()}</p>
             )}
           </div>
-          <span className="text-sm text-blue-600 font-semibold group-hover:underline">View Dealers →</span>
+          <span className="text-sm text-blue-600 font-semibold group-hover:underline">View Dealers</span>
         </div>
       </div>
     </Link>
   );
 }
 
-// ─────────────────────────────────────────────
-// USED VEHICLE CARD — Marketplace / individual
-// ─────────────────────────────────────────────
 function UsedVehicleCard({ v, vtype, vcond }: { v: VehicleRow; vtype: string; vcond: string }) {
+  void vtype; void vcond;
   return (
     <Link href={`/vehicles/${v.slug}?condition=used`}
       className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all group">
 
       <div className="relative h-52 bg-gray-100 overflow-hidden">
-        <img src={v.image_url || "/vehicles/Mahindra_575_DI_2021.jpg"} alt={v.name}
+        <img src={v.image_url || "/vehicles/placeholder.jpg"} alt={v.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-
         <span className="absolute top-2 left-2 bg-amber-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">Used</span>
-        <span className="absolute top-2 right-2 bg-white/90 text-gray-700 text-xs px-2 py-0.5 rounded-full font-medium">👤 Individual</span>
-
+        <span className="absolute top-2 right-2 bg-white/90 text-gray-700 text-xs px-2 py-0.5 rounded-full font-medium">Individual</span>
         {v.min_hp && (
           <span className="absolute bottom-2 right-2 bg-white/90 text-gray-800 text-xs px-2 py-0.5 rounded-full font-bold">
-            {v.min_hp === v.max_hp ? `${v.min_hp} HP` : `${v.min_hp}–${v.max_hp} HP`}
+            {v.min_hp === v.max_hp ? `${v.min_hp} HP` : `${v.min_hp}-${v.max_hp} HP`}
           </span>
         )}
         <span className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
@@ -260,27 +243,25 @@ function UsedVehicleCard({ v, vtype, vcond }: { v: VehicleRow; vtype: string; vc
         <h3 className="font-bold text-gray-900 text-lg leading-tight">{v.name}</h3>
         <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
           {v.min_year && (
-            <span>{v.min_year === v.max_year ? v.min_year : `${v.min_year}–${v.max_year}`}</span>
+            <span>{v.min_year === v.max_year ? v.min_year : `${v.min_year}-${v.max_year}`}</span>
           )}
-          {v.districts && <span className="truncate">· 📍 {v.districts}</span>}
+          {v.districts && <span className="truncate">{v.districts}</span>}
         </div>
-
         <div className="mt-2 flex gap-2 flex-wrap">
-          <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">🏦 Loan available</span>
-          <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">🛡️ Insurance</span>
-          <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">💬 Negotiable</span>
+          <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">Loan available</span>
+          <span className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full">Insurance</span>
+          <span className="text-xs bg-gray-50 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">Negotiable</span>
         </div>
-
         <div className="mt-3 flex items-end justify-between">
           <div>
-            <p className="text-amber-700 font-bold text-xl">₹{Number(v.min_price).toLocaleString()}
+            <p className="text-amber-700 font-bold text-xl">Rs{Number(v.min_price).toLocaleString()}
               {Number(v.max_price) > Number(v.min_price) && (
-                <span className="text-sm font-normal text-gray-400"> – ₹{Number(v.max_price).toLocaleString()}</span>
+                <span className="text-sm font-normal text-gray-400"> - Rs{Number(v.max_price).toLocaleString()}</span>
               )}
             </p>
-            <p className="text-xs text-gray-400">asking price · negotiate directly</p>
+            <p className="text-xs text-gray-400">asking price - negotiate directly</p>
           </div>
-          <span className="text-sm text-blue-600 font-medium group-hover:underline">View Sellers →</span>
+          <span className="text-sm text-blue-600 font-medium group-hover:underline">View Sellers</span>
         </div>
       </div>
     </Link>

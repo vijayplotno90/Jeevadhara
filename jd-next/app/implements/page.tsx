@@ -37,15 +37,15 @@ const CAT_LABELS: Record<string, string> = {
 };
 
 const TOOL_EMOJIS: Record<string, string> = {
-  "garden-fork": "🍴",
-  "hand-trowel": "🌱",
-  hoe: "⚒️",
-  rake: "🪣",
-  shovel: "⛏️",
-  sickle: "🌾",
-  spade: "🔧",
-  "knapsack-sprayer": "💦",
-  wheelbarrow: "🛒",
+  "garden-fork": "Fork",
+  "hand-trowel": "Trowel",
+  hoe: "Hoe",
+  rake: "Rake",
+  shovel: "Shovel",
+  sickle: "Sickle",
+  spade: "Spade",
+  "knapsack-sprayer": "Sprayer",
+  wheelbarrow: "Barrow",
 };
 
 export default function ImplementsPage() {
@@ -92,15 +92,13 @@ export default function ImplementsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-gradient-to-r from-orange-600 to-amber-500 text-white px-4 py-8">
-        <h1 className="text-2xl font-bold">🛠️ Farm Tools & Implements</h1>
+        <h1 className="text-2xl font-bold">Farm Tools and Implements</h1>
         <p className="text-orange-100 text-sm mt-1">
-          Hand tools &amp; powered equipment — all new, from verified sellers
+          Hand tools and powered equipment - all new, from verified sellers
         </p>
       </div>
 
-      {/* Filters */}
       <div className="sticky top-0 z-10 bg-white border-b shadow-sm px-4 py-3 flex gap-3 overflow-x-auto">
         {Object.entries(CAT_LABELS).map(([k, label]) => (
           <button
@@ -117,68 +115,64 @@ export default function ImplementsPage() {
         ))}
       </div>
 
-      {/* Grid */}
       <div className="max-w-5xl mx-auto px-4 py-6">
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Loading tools…</div>
+          <div className="text-center py-16 text-gray-400">Loading tools...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-400">No tools found.</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {filtered.map((t) => (
-                <button
-                  key={t.slug}
-                  onClick={() => openModal(t.slug, t.name)}
-                  className="bg-white rounded-2xl shadow hover:shadow-md transition-all text-left overflow-hidden group"
-                >
-                  {/* Image */}
-                  <div className="relative h-40 bg-orange-50 flex items-center justify-center">
-                    {t.image_url ? (
-                      <Image
-                        src={t.image_url}
-                        alt={t.name}
-                        fill
-                        className="object-contain p-3"
-                        sizes="(max-width:640px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <span className="text-5xl">
-                        {TOOL_EMOJIS[t.slug] || "🔧"}
-                      </span>
-                    )}
-                  </div>
+              <button
+                key={t.slug}
+                onClick={() => openModal(t.slug, t.name)}
+                className="bg-white rounded-2xl shadow hover:shadow-md transition-all text-left overflow-hidden group"
+              >
+                <div className="relative h-40 bg-orange-50 flex items-center justify-center">
+                  {t.image_url ? (
+                    <Image
+                      src={t.image_url}
+                      alt={t.name}
+                      fill
+                      className="object-contain p-3"
+                      sizes="(max-width:640px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <span className="text-2xl text-orange-400">
+                      {TOOL_EMOJIS[t.slug] || "Tool"}
+                    </span>
+                  )}
+                </div>
 
-                  {/* Info */}
-                  <div className="p-3">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-orange-600">
-                      {t.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5 capitalize">
-                      {CAT_LABELS[t.category] || t.category}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <div>
-                        <span className="text-orange-600 font-bold text-sm">
-                          ₹{Number(t.min_price).toLocaleString("en-IN")}
-                        </span>
-                        {t.min_price !== t.max_price && (
-                          <span className="text-gray-400 text-xs">
-                            {" "}– ₹{Number(t.max_price).toLocaleString("en-IN")}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {t.seller_count} seller{t.seller_count !== 1 ? "s" : ""}
+                <div className="p-3">
+                  <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-orange-600">
+                    {t.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5 capitalize">
+                    {CAT_LABELS[t.category] || t.category}
+                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <div>
+                      <span className="text-orange-600 font-bold text-sm">
+                        Rs{Number(t.min_price).toLocaleString("en-IN")}
                       </span>
+                      {t.min_price !== t.max_price && (
+                        <span className="text-gray-400 text-xs">
+                          {" "}- Rs{Number(t.max_price).toLocaleString("en-IN")}
+                        </span>
+                      )}
                     </div>
+                    <span className="text-xs text-gray-500">
+                      {t.seller_count} seller{t.seller_count !== 1 ? "s" : ""}
+                    </span>
                   </div>
-                </button>
+                </div>
+              </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Seller Modal */}
       {modal.open && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -188,7 +182,6 @@ export default function ImplementsPage() {
             className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal header */}
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white z-10">
               <div>
                 <h2 className="font-bold text-lg text-gray-900">{modal.name}</h2>
@@ -200,14 +193,13 @@ export default function ImplementsPage() {
                 onClick={closeModal}
                 className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"
               >
-                ✕
+                X
               </button>
             </div>
 
-            {/* Seller cards */}
             <div className="p-4 space-y-3">
               {sellersLoading ? (
-                <div className="text-center py-8 text-gray-400">Loading sellers…</div>
+                <div className="text-center py-8 text-gray-400">Loading sellers...</div>
               ) : sellers.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">No sellers found.</div>
               ) : (
@@ -229,22 +221,21 @@ export default function ImplementsPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-orange-600 font-bold text-base">
-                          ₹{Number(s.price).toLocaleString("en-IN")}
+                          Rs{Number(s.price).toLocaleString("en-IN")}
                         </p>
                         <p className="text-xs text-gray-400">/ {s.unit}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span>📦 Stock: {s.stock}</span>
-                      {s.district && <span>📍 {s.village || s.district}, {s.district}</span>}
+                      <span>Stock: {s.stock}</span>
+                      {s.district && <span>{s.village || s.district}, {s.district}</span>}
                     </div>
 
-                    {/* Seller info + CTA */}
                     <div className="flex items-center justify-between pt-1">
                       <div>
                         <p className="text-sm font-semibold text-gray-800">
-                          👤 {s.seller_name || "Seller"}
+                          {s.seller_name || "Seller"}
                         </p>
                         {s.seller_phone && (
                           <p className="text-xs text-gray-500">{s.seller_phone}</p>
@@ -255,7 +246,7 @@ export default function ImplementsPage() {
                           href={`tel:${s.seller_phone}`}
                           className="bg-orange-600 text-white text-sm px-4 py-2 rounded-xl font-semibold hover:bg-orange-700 transition-colors"
                         >
-                          📞 Call Seller
+                          Call Seller
                         </a>
                       )}
                     </div>
@@ -264,7 +255,6 @@ export default function ImplementsPage() {
               )}
             </div>
 
-            {/* Bottom admin note */}
             <div className="px-5 pb-5 pt-1">
               <p className="text-xs text-center text-gray-400">
                 All listings verified by Jeevadhara admin team
