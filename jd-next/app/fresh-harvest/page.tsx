@@ -130,12 +130,21 @@ export default async function FreshHarvestPage({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">🌿 Fresh Harvest</h1>
-        <p className="text-gray-500 mt-1">Farm-to-doorstep produce · Click any product to compare sellers &amp; prices</p>
+    <div className="min-h-screen">
+      {/* Full-width hero */}
+      <div className="bg-gradient-to-r from-green-800 to-emerald-600 px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-white">🌿 Fresh Harvest</h1>
+          <p className="text-green-100 mt-1">Farm-to-doorstep produce · Direct from Telangana farmers · Compare sellers &amp; prices</p>
+          <div className="flex gap-3 mt-4 flex-wrap">
+            {["🌾 100% Farm Fresh","🚜 Direct from Farmers","📦 Cash on Delivery","✅ Admin Certified"].map(b => (
+              <span key={b} className="text-xs bg-white/20 text-white px-3 py-1.5 rounded-full font-medium">{b}</span>
+            ))}
+          </div>
+        </div>
       </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-6">
 
       {/* Search */}
       <form method="GET" className="flex gap-2 mb-6">
@@ -179,7 +188,10 @@ export default async function FreshHarvestPage({
         <ProductGrid products={products} />
       )}
 
-      <div className="mt-12 bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+      </div>{/* end max-w-7xl */}
+
+      <div className="bg-green-50 border-t border-green-200 px-4 py-8">
+      <div className="max-w-7xl mx-auto text-center">
         <p className="text-green-800 font-semibold">Are you a farmer?</p>
         <p className="text-green-700 text-sm mt-1">List your produce and reach thousands of customers.</p>
         <Link href="/auth?role=farmer"
@@ -187,6 +199,7 @@ export default async function FreshHarvestPage({
           Register as Farmer
         </Link>
       </div>
+      </div>{/* end bg-green-50 */}
     </div>
   );
 }

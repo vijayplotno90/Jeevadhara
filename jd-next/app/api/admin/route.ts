@@ -183,6 +183,23 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: true, certified: false });
     }
 
+    if (action === "update") {
+      const sClauses: string[] = [];
+      const sParams: unknown[] = [];
+      const { price: p2, name: n2, stock: s2, description: d2 } = body;
+      if (p2 !== undefined && p2 !== null) { sParams.push(parseFloat(p2)); sClauses.push(`price = $${sParams.length}`); }
+      if (n2 !== undefined && n2 !== null && lt !== "livestock") { sParams.push(n2); sClauses.push(`name = $${sParams.length}`); }
+      if (d2 !== undefined && d2 !== null) { sParams.push(d2); sClauses.push(`description = $${sParams.length}`); }
+      if (s2 !== undefined && s2 !== null && lt === "livestock") { sParams.push(parseFloat(s2)); sClauses.push(`quantity = $${sParams.length}`); }
+      else if (s2 !== undefined && s2 !== null) { sParams.push(parseFloat(s2)); sClauses.push(`stock = $${sParams.length}`); }
+      if (body.is_organic !== undefined && tbl === "products") { sParams.push(Boolean(body.is_organic)); sClauses.push(`is_organic = $${sParams.length}`); }
+      if (sClauses.length === 0) return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+      sParams.push(product_id);
+      await query(`UPDATE ${tbl} SET ${sClauses.join(", ")} WHERE id::text = $${sParams.length}::text`, sParams);
+      return NextResponse.json({ success: true, certified: null });
+    }
+
+
     const setClauses: string[] = ["is_active = TRUE"];
     const params: unknown[] = [];
 

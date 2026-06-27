@@ -81,14 +81,22 @@ export default async function VehiclesPage({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Farm Vehicle Bazaar</h1>
-        <p className="text-gray-500 mt-1">
-          <span className="text-green-700 font-semibold">New</span> — Authorized Dealers &middot;{" "}
-          <span className="text-amber-700 font-semibold">Used</span> — Direct from Farmers
-        </p>
+    <div className="min-h-screen">
+      <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-white">🚜 Farm Vehicle Bazaar</h1>
+          <p className="text-blue-200 mt-1">
+            <span className="text-white font-semibold">New</span> — Authorized Dealers &middot;{" "}
+            <span className="text-yellow-300 font-semibold">Used</span> — Direct from Farmers
+          </p>
+          <div className="flex gap-3 mt-4 flex-wrap">
+            {["🏪 Authorized Dealers","🤝 Farmer-to-Farmer","🔧 Service Support","📋 RC Transfer Help"].map(b => (
+              <span key={b} className="text-xs bg-white/20 text-white px-3 py-1.5 rounded-full font-medium">{b}</span>
+            ))}
+          </div>
+        </div>
       </div>
+      <div className="max-w-7xl mx-auto px-4 py-6">
 
       <div className="flex gap-3 flex-wrap mb-5">
         {["Loan from 3 Banks", "Insurance from 3 Banks", "Verified Dealers", "Direct Farmer Listings"].map(b => (
@@ -164,6 +172,7 @@ export default async function VehiclesPage({
             Register as Dealer
           </Link>
         </div>
+      </div>
       </div>
     </div>
   );

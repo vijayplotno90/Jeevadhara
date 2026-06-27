@@ -74,11 +74,14 @@ export default async function AnimalsPage({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">🐄 Livestock Bazaar</h1>
-        <p className="text-gray-500 mt-1">Verified breeds · Vet-certified · Buy direct from Telangana farmers · Fish Seeds for pond stocking</p>
+    <div className="min-h-screen">
+      <div className="bg-gradient-to-r from-amber-700 to-amber-500 px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-white">🐄 Livestock Bazaar</h1>
+          <p className="text-amber-100 mt-1">Verified breeds · Vet-certified · Buy direct from Telangana farmers · Fish Seeds for pond stocking</p>
+        </div>
       </div>
+      <div className="max-w-7xl mx-auto px-4 py-6">
 
       <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
         {CATS.map(c => (
@@ -177,14 +180,17 @@ export default async function AnimalsPage({
         </div>
       )}
 
-      <div className="mt-12 bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+      </div>{/* end max-w wrapper */}
+      <div className="bg-amber-50 border-t border-amber-200 px-4 py-8">
+      <div className="max-w-7xl mx-auto text-center">
         <p className="text-amber-900 font-semibold text-lg">🐄 Do you have livestock to sell?</p>
         <p className="text-amber-700 text-sm mt-1">List your animals, get vet certified, and reach thousands of verified buyers.</p>
         <Link href="/auth?role=farmer"
           className="inline-block mt-3 bg-amber-500 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-amber-600">
           Register as Farmer
           </Link>
-        </div>
+      </div>
+      </div>
     </div>
   );
 }
