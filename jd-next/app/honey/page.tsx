@@ -1,92 +1,249 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 
-interface HoneyProduct {
-  id: string;
+interface HoneyRow {
+  slug: string;
   name: string;
-  nameHi: string;
-  emoji: string;
-  origin: string;
-  purity: string;
-  gradient: string;
-  price: number;
+  image_url: string;
+  min_price: number;
+  max_price: number;
+  seller_count: number;
   unit: string;
-  benefits: string[];
-  badge?: string;
 }
 
-const PRODUCTS: HoneyProduct[] = [
-  { id:"forest-wild", name:"Forest Wild Honey", nameHi:"జంగల్ తేనె", emoji:"🍯", origin:"Adilabad Forest, Telangana", purity:"100% Raw", gradient:"from-amber-100 to-yellow-200", price:850, unit:"kg", benefits:["Antibacterial","Rich minerals","Unprocessed","Dark & thick"], badge:"🏆 Best Seller" },
-  { id:"sunflower", name:"Sunflower Honey", nameHi:"పొద్దుతిరుగుడు తేనె", emoji:"🌻", origin:"Nalgonda, Telangana", purity:"Natural Unfiltered", gradient:"from-yellow-100 to-orange-100", price:620, unit:"kg", benefits:["Light floral taste","High antioxidants","Good for immunity","Crystallizes naturally"] },
-  { id:"multiflora", name:"Multiflora Honey", nameHi:"మల్టీఫ్లోరా తేనె", emoji:"🌸", origin:"Warangal, Telangana", purity:"Pure Wild", gradient:"from-pink-100 to-rose-100", price:720, unit:"kg", benefits:["Complex flavor","Mixed pollen","Seasonal harvest","NMR tested"] },
-  { id:"beeswax", name:"Pure Beeswax", nameHi:"మైనపు", emoji:"🕯️", origin:"Karimnagar, Telangana", purity:"Food Grade", gradient:"from-amber-50 to-amber-100", price:1200, unit:"kg", benefits:["Cosmetic grade","Food wrapping","Natural preservative","Filtered clean"], badge:"💄 Cosmetic Grade" },
-  { id:"propolis", name:"Propolis Extract 30%", nameHi:"ప్రొపోలిస్", emoji:"🧪", origin:"Nizamabad, Telangana", purity:"30% Extract", gradient:"from-brown-50 to-amber-100", price:2800, unit:"100ml", benefits:["Antimicrobial","Wound healing","Immune support","Alcohol extract"] },
-  { id:"royal-jelly", name:"Royal Jelly", nameHi:"రాయల్ జెల్లీ", emoji:"👑", origin:"Hyderabad, Telangana", purity:"Fresh Frozen", gradient:"from-yellow-50 to-cream-100", price:4500, unit:"100g", benefits:["Anti-aging","Energy boost","Skin nutrition","Frozen fresh"], badge:"⭐ Premium" },
-];
+interface SellerRow {
+  id: string;
+  name: string;
+  price: number;
+  unit: string;
+  stock: number;
+  description: string | null;
+  image_url: string | null;
+  district: string | null;
+  is_organic: boolean;
+  seller_name: string | null;
+  seller_phone: string | null;
+  seller_village: string | null;
+  seller_district: string | null;
+}
+
+const HONEY_EMOJIS: Record<string, string> = {
+  "raw-forest-honey": "🍯",
+  "apis-cerana-honey": "🐝",
+  "mellifera-honey": "🌼",
+  "raw-honeycomb": "🍀",
+  "propolis-extract": "🌿",
+  "pure-beeswax": "✨",
+  "royal-jelly": "👑",
+};
 
 export default function HoneyPage() {
-  const [added, setAdded] = useState<string | null>(null);
-  const [qty, setQty] = useState<Record<string, number>>({});
+  const [products, setProducts] = useState<HoneyRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState<{ open: boolean; slug: string; name: string }>({
+    open: false,
+    slug: "",
+    name: "",
+  });
+  const [sellers, setSellers] = useState<SellerRow[]>([]);
+  const [sellersLoading, setSellersLoading] = useState(false);
 
-  function getQty(id: string) { return qty[id] || 1; }
+  useEffect(() => {
+    fetch("/api/honey")
+      .then((r) => r.json())
+      .then((d) => {
+        setProducts(Array.isArray(d) ? d : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  function addToCart(p: HoneyProduct) {
-    const q = getQty(p.id);
-    const stored = JSON.parse(localStorage.getItem("jd_cart") || "[]");
-    const idx = stored.findIndex((i: { id: string }) => i.id === `honey-${p.id}`);
-    if (idx >= 0) stored[idx].qty += q;
-    else stored.push({ id:`honey-${p.id}`, name:p.name, price:p.price, unit:p.unit, qty:q, emoji:p.emoji });
-    localStorage.setItem("jd_cart", JSON.stringify(stored));
-    window.dispatchEvent(new Event("storage"));
-    setAdded(p.id);
-    setTimeout(() => setAdded(null), 1500);
+  function openModal(slug: string, name: string) {
+    setModal({ open: true, slug, name });
+    setSellers([]);
+    setSellersLoading(true);
+    fetch(`/api/honey/${slug}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setSellers(Array.isArray(d) ? d : []);
+        setSellersLoading(false);
+      })
+      .catch(() => setSellersLoading(false));
+  }
+
+  function closeModal() {
+    setModal({ open: false, slug: "", name: "" });
+    setSellers([]);
   }
 
   return (
     <div className="min-h-screen bg-amber-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-amber-800 mb-1">🍯 Honey & Bee Products</h1>
-          <p className="text-gray-500">Pure, raw honey from Telangana forests — farm to your door</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {PRODUCTS.map(p => (
-            <div key={p.id} className={`bg-gradient-to-br ${p.gradient} rounded-2xl p-5 border border-white shadow-sm hover:shadow-md transition-all`}>
-              {p.badge && (
-                <span className="inline-block text-xs bg-white/70 text-amber-700 font-semibold px-2 py-0.5 rounded-full mb-2">{p.badge}</span>
-              )}
-              <div className="text-5xl mb-3">{p.emoji}</div>
-              <h3 className="font-bold text-gray-800 text-lg">{p.name}</h3>
-              <p className="text-sm text-gray-500 mb-1">📍 {p.origin}</p>
-              <span className="inline-block text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full mb-3">{p.purity}</span>
-              <ul className="space-y-1 mb-4">
-                {p.benefits.map((b, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex gap-1.5"><span className="text-amber-500">✓</span>{b}</li>
-                ))}
-              </ul>
-
-              <div className="flex items-center gap-2 mb-3">
-                <button onClick={() => setQty(q => ({...q, [p.id]: Math.max(1, getQty(p.id)-1)}))
-                } className="w-7 h-7 rounded-full bg-white border text-gray-600 font-bold text-sm hover:bg-amber-100">−</button>
-                <span className="font-semibold text-gray-800 w-5 text-center">{getQty(p.id)}</span>
-                <button onClick={() => setQty(q => ({...q, [p.id]: getQty(p.id)+1}))} className="w-7 h-7 rounded-full bg-white border text-gray-600 font-bold text-sm hover:bg-amber-100">+</button>
-                <span className="text-sm text-gray-500">{p.unit}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xl font-bold text-amber-800">₹{(p.price * getQty(p.id)).toLocaleString()}</span>
-                <button onClick={() => addToCart(p)}
-                  className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${
-                    added === p.id ? "bg-amber-600 text-white" : "bg-white text-amber-700 border border-amber-300 hover:bg-amber-50"
-                  }`}>
-                  {added === p.id ? "Added! ✓" : "Add to Cart"}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white px-4 py-8">
+        <h1 className="text-2xl font-bold">🍯 Honey & Bee Products</h1>
+        <p className="text-amber-100 text-sm mt-1">
+          Raw honey, beeswax, propolis &amp; royal jelly — direct from Telangana beekeepers
+        </p>
       </div>
+
+      {/* Grid */}
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        {loading ? (
+          <div className="text-center py-16 text-gray-400">Loading products…</div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">No products found.</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {products.map((p) => (
+              <button
+                key={p.slug}
+                onClick={() => openModal(p.slug, p.name)}
+                className="bg-white rounded-2xl shadow hover:shadow-md transition-all text-left overflow-hidden group"
+              >
+                {/* Image */}
+                <div className="relative h-44 bg-amber-50 flex items-center justify-center">
+                  {p.image_url ? (
+                    <Image
+                      src={p.image_url}
+                      alt={p.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width:640px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <span className="text-5xl">{HONEY_EMOJIS[p.slug] || "🍯"}</span>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <span className="absolute bottom-2 left-3 text-white text-xs font-semibold bg-amber-600/80 px-2 py-0.5 rounded-full">
+                    {p.seller_count} farmer{p.seller_count !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                {/* Info */}
+                <div className="p-3">
+                  <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-amber-700">
+                    {p.name}
+                  </h3>
+                  <div className="flex items-center justify-between mt-2">
+                    <div>
+                      <span className="text-amber-600 font-bold text-sm">
+                        ₹{Number(p.min_price).toLocaleString("en-IN")}
+                      </span>
+                      {p.min_price !== p.max_price && (
+                        <span className="text-gray-400 text-xs">
+                          {" "}– ₹{Number(p.max_price).toLocaleString("en-IN")}
+                        </span>
+                      )}
+                      <span className="text-gray-400 text-xs"> / {p.unit}</span>
+                    </div>
+                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                      Compare
+                    </span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Seller Modal */}
+      {modal.open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white z-10">
+              <div>
+                <h2 className="font-bold text-lg text-gray-900">{modal.name}</h2>
+                <p className="text-sm text-gray-500">
+                  {sellers.length} farmer{sellers.length !== 1 ? "s" : ""} selling
+                </p>
+              </div>
+              <button
+                onClick={closeModal}
+                className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {sellersLoading ? (
+                <div className="text-center py-8 text-gray-400">Loading…</div>
+              ) : sellers.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">No sellers.</div>
+              ) : (
+                sellers.map((s) => (
+                  <div
+                    key={s.id}
+                    className="border rounded-xl p-4 space-y-2 hover:border-amber-300 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        {s.is_organic && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                            🌿 Organic
+                          </span>
+                        )}
+                        <p className="text-gray-700 text-sm mt-1 leading-snug">
+                          {s.description}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-amber-600 font-bold text-base">
+                          ₹{Number(s.price).toLocaleString("en-IN")}
+                        </p>
+                        <p className="text-xs text-gray-400">/ {s.unit}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span>📦 {s.stock} units</span>
+                      {s.seller_district && (
+                        <span>
+                          📍 {s.seller_village || s.seller_district},{" "}
+                          {s.seller_district}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">
+                          🧑‍🌾 {s.seller_name || "Farmer"}
+                        </p>
+                        {s.seller_phone && (
+                          <p className="text-xs text-gray-500">{s.seller_phone}</p>
+                        )}
+                      </div>
+                      {s.seller_phone && (
+                        <a
+                          href={`tel:${s.seller_phone}`}
+                          className="bg-amber-500 text-white text-sm px-4 py-2 rounded-xl font-semibold hover:bg-amber-600 transition-colors"
+                        >
+                          📞 Call Farmer
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="px-5 pb-5 pt-1">
+              <p className="text-xs text-center text-gray-400">
+                All honey farmers verified by Jeevadhara admin team
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,111 +1,255 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-interface Plant {
-  id: string;
+interface PlantRow {
+  slug: string;
   name: string;
-  nameHi: string;
-  emoji: string;
-  type: string;
-  season: string;
-  fruitingTime: string;
-  price: number;
-  minQty: number;
-  gradient: string;
-  benefits: string[];
-  badge?: string;
+  image_url: string | null;
+  min_price: number;
+  max_price: number;
+  seller_count: number;
+  unit: string;
 }
 
-const PLANTS: Plant[] = [
-  { id:"mango-alphonso", name:"Alphonso Mango Sapling", nameHi:"అల్ఫాన్సో మామిడి", emoji:"🥭", type:"Fruit", season:"Plant Jun–Aug", fruitingTime:"3–4 years", price:350, minQty:10, gradient:"from-yellow-100 to-amber-100", benefits:["Grafted 2yr old","GI-certified variety","High export demand","Suitable for Telangana"], badge:"🏆 Export Grade" },
-  { id:"banana-g9", name:"G9 Banana Tissue Culture", nameHi:"జి9 అరటి", emoji:"🍌", type:"Fruit", season:"Year round", fruitingTime:"9–11 months", price:35, minQty:100, gradient:"from-yellow-50 to-lime-100", benefits:["Disease-free TC plant","40–50 kg bunch","1 year crop cycle","High yield"], badge:"⚡ Fast Crop" },
-  { id:"coconut-west", name:"West Coast Tall Coconut", nameHi:"కొబ్బరి మొక్క", emoji:"🥥", type:"Perennial", season:"Plant Jun–Jul", fruitingTime:"5–6 years", price:120, minQty:25, gradient:"from-green-100 to-emerald-100", benefits:["80–100 nuts/year","Drought tolerant","50yr productive life","Good for Telangana"] },
-  { id:"guava-l49", name:"L-49 Guava (Lucknow-49)", nameHi:"జామ చెట్టు", emoji:"🍐", type:"Fruit", season:"Plant Feb–Mar or Jun", fruitingTime:"2–3 years", price:80, minQty:20, gradient:"from-lime-100 to-green-100", benefits:["Sweet & seedless","2 crops/year","Grafted plant","High market demand"] },
-  { id:"teak", name:"Teak Sapling (1yr)", nameHi:"టేకు మొక్క", emoji:"🌳", type:"Timber", season:"Plant Jun–Jul", fruitingTime:"15–20 years", price:45, minQty:100, gradient:"from-brown-50 to-amber-50", benefits:["Premium hardwood","₹2000+/CFT","Investment tree","Forest dept certified"] },
-  { id:"moringa", name:"Moringa (Drumstick) PKM-1", nameHi:"మునగ చెట్టు", emoji:"🌿", type:"Vegetable tree", season:"Plant year round", fruitingTime:"6–8 months", price:25, minQty:50, gradient:"from-emerald-50 to-teal-100", benefits:["Flowers 6 months","High nutritional value","Export of leaves","5yr life"] },
-  { id:"sitafal", name:"Sitaphal (Custard Apple) NA-1", nameHi:"సీతాఫలం", emoji:"🍈", type:"Fruit", season:"Plant Jul–Aug", fruitingTime:"2–3 years", price:180, minQty:15, gradient:"from-green-50 to-lime-50", benefits:["Telangana native","Grafted NA-1 variety","₹60–80/kg market","Minimal care needed"] },
-  { id:"amla", name:"Amla (Gooseberry) NA-7", nameHi:"ఉసిరికాయ", emoji:"🟢", type:"Medicinal fruit", season:"Plant Jun–Jul", fruitingTime:"3–4 years", price:90, minQty:25, gradient:"from-teal-50 to-cyan-100", benefits:["Vitamin C highest","Pharma demand","Processing industry","Drought tolerant"], badge:"💊 Medicinal" },
-];
+interface SellerRow {
+  id: string;
+  name: string;
+  price: number;
+  unit: string;
+  stock: number;
+  description: string | null;
+  district: string | null;
+  is_organic: boolean;
+  seller_name: string | null;
+  seller_phone: string | null;
+  seller_village: string | null;
+  seller_district: string | null;
+}
+
+const PLANT_EMOJIS: Record<string, string> = {
+  "alphonso-mango-sapling": "🥭",
+  "g9-banana-tc-plant": "🍌",
+  "west-coast-tall-coconut": "🥥",
+  "teak-sapling-1yr": "🌲",
+  "moringa-pkm-1": "🌿",
+  "sitaphal-na-1": "🍏",
+  "amla-na-7": "🫐",
+  "l-49-guava": "🍈",
+};
+
+const PLANT_COLOR: Record<string, string> = {
+  "alphonso-mango-sapling": "from-yellow-500 to-orange-400",
+  "g9-banana-tc-plant": "from-yellow-400 to-lime-400",
+  "west-coast-tall-coconut": "from-green-600 to-teal-500",
+  "teak-sapling-1yr": "from-amber-700 to-orange-600",
+  "moringa-pkm-1": "from-green-500 to-emerald-400",
+  "sitaphal-na-1": "from-lime-500 to-green-400",
+  "amla-na-7": "from-purple-500 to-violet-400",
+  "l-49-guava": "from-green-400 to-lime-300",
+};
 
 export default function PlantationPage() {
-  const [type, setType] = useState("all");
-  const [added, setAdded] = useState<string | null>(null);
-  const [qty, setQty] = useState<Record<string, number>>({});
+  const [plants, setPlants] = useState<PlantRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState<{ open: boolean; slug: string; name: string }>({
+    open: false,
+    slug: "",
+    name: "",
+  });
+  const [sellers, setSellers] = useState<SellerRow[]>([]);
+  const [sellersLoading, setSellersLoading] = useState(false);
 
-  const types = ["all", ...Array.from(new Set(PLANTS.map(p => p.type)))];
-  const visible = type === "all" ? PLANTS : PLANTS.filter(p => p.type === type);
+  useEffect(() => {
+    fetch("/api/nursery")
+      .then((r) => r.json())
+      .then((d) => {
+        setPlants(Array.isArray(d) ? d : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
-  function getQty(id: string, min: number) { return qty[id] || min; }
+  function openModal(slug: string, name: string) {
+    setModal({ open: true, slug, name });
+    setSellers([]);
+    setSellersLoading(true);
+    fetch(`/api/nursery/${slug}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setSellers(Array.isArray(d) ? d : []);
+        setSellersLoading(false);
+      })
+      .catch(() => setSellersLoading(false));
+  }
 
-  function addToCart(plant: Plant) {
-    const q = getQty(plant.id, plant.minQty);
-    const stored = JSON.parse(localStorage.getItem("jd_cart") || "[]");
-    const idx = stored.findIndex((i: { id: string }) => i.id === `plant-${plant.id}`);
-    if (idx >= 0) stored[idx].qty += q;
-    else stored.push({ id:`plant-${plant.id}`, name:plant.name, price:plant.price, unit:"sapling", qty:q, emoji:plant.emoji });
-    localStorage.setItem("jd_cart", JSON.stringify(stored));
-    window.dispatchEvent(new Event("storage"));
-    setAdded(plant.id);
-    setTimeout(() => setAdded(null), 1500);
+  function closeModal() {
+    setModal({ open: false, slug: "", name: "" });
+    setSellers([]);
   }
 
   return (
     <div className="min-h-screen bg-green-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-green-800 mb-1">🌱 Nursery & Plantation</h1>
-          <p className="text-gray-500">Certified saplings & tissue culture plants — bulk orders welcome</p>
-        </div>
-
-        <div className="flex gap-2 flex-wrap mb-6">
-          {types.map(t => (
-            <button key={t} onClick={() => setType(t)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                type === t ? "bg-green-700 text-white" : "bg-white border text-gray-600 hover:border-green-400"
-              }`}>{t === "all" ? "All Plants" : t}</button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {visible.map(plant => (
-            <div key={plant.id} className={`bg-gradient-to-br ${plant.gradient} rounded-2xl p-5 border border-white shadow-sm hover:shadow-md transition-all`}>
-              {plant.badge && <span className="inline-block text-xs bg-white/70 text-green-700 font-semibold px-2 py-0.5 rounded-full mb-2">{plant.badge}</span>}
-              <div className="text-5xl mb-3">{plant.emoji}</div>
-              <h3 className="font-bold text-gray-800 text-lg leading-tight">{plant.name}</h3>
-              <div className="flex gap-2 mt-1 mb-2 flex-wrap">
-                <span className="text-xs bg-white/60 text-gray-600 px-2 py-0.5 rounded-full">{plant.type}</span>
-                <span className="text-xs bg-white/60 text-green-700 px-2 py-0.5 rounded-full">🕒 {plant.fruitingTime}</span>
-              </div>
-              <p className="text-xs text-gray-500 mb-2">📅 {plant.season}</p>
-              <ul className="space-y-1 mb-4">
-                {plant.benefits.map((b, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex gap-1.5"><span className="text-green-500">✓</span>{b}</li>
-                ))}
-              </ul>
-
-              <div className="flex items-center gap-2 mb-3">
-                <button onClick={() => setQty(q => ({...q, [plant.id]: Math.max(plant.minQty, getQty(plant.id, plant.minQty)-plant.minQty)}))} className="w-7 h-7 rounded-full bg-white border text-gray-600 hover:bg-green-100 text-sm font-bold">−</button>
-                <span className="font-semibold text-gray-800 w-8 text-center">{getQty(plant.id, plant.minQty)}</span>
-                <button onClick={() => setQty(q => ({...q, [plant.id]: getQty(plant.id, plant.minQty)+plant.minQty}))} className="w-7 h-7 rounded-full bg-white border text-gray-600 hover:bg-green-100 text-sm font-bold">+</button>
-                <span className="text-xs text-gray-400">min {plant.minQty} saplings</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xl font-bold text-green-800">₹{(plant.price * getQty(plant.id, plant.minQty)).toLocaleString()}</span>
-                  <span className="text-xs text-gray-400 ml-1">@₹{plant.price}/sapling</span>
-                </div>
-                <button onClick={() => addToCart(plant)}
-                  className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${
-                    added === plant.id ? "bg-green-600 text-white" : "bg-white text-green-700 border border-green-300 hover:bg-green-50"
-                  }`}>
-                  {added === plant.id ? "Added! ✓" : "Order"}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-green-700 to-emerald-500 text-white px-4 py-8">
+        <h1 className="text-2xl font-bold">🌱 Nursery & Plantation</h1>
+        <p className="text-green-100 text-sm mt-1">
+          Certified saplings from verified nursery dealers — mango, banana, coconut, teak &amp; more
+        </p>
       </div>
+
+      {/* Grid */}
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        {loading ? (
+          <div className="text-center py-16 text-gray-400">Loading plants…</div>
+        ) : plants.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">No plants found.</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {plants.map((p) => {
+              const gradient = PLANT_COLOR[p.slug] || "from-green-500 to-teal-400";
+              return (
+                <button
+                  key={p.slug}
+                  onClick={() => openModal(p.slug, p.name)}
+                  className="bg-white rounded-2xl shadow hover:shadow-md transition-all text-left overflow-hidden group"
+                >
+                  {/* Color gradient banner with emoji */}
+                  <div
+                    className={`h-36 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}
+                  >
+                    <span className="text-6xl drop-shadow">
+                      {PLANT_EMOJIS[p.slug] || "🌿"}
+                    </span>
+                    <span className="absolute bottom-2 right-2 text-white text-xs bg-black/30 px-2 py-0.5 rounded-full">
+                      {p.seller_count} dealer{p.seller_count !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-3">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-green-700">
+                      {p.name}
+                    </h3>
+                    <div className="flex items-center justify-between mt-2">
+                      <div>
+                        <span className="text-green-700 font-bold text-sm">
+                          ₹{Number(p.min_price).toLocaleString("en-IN")}
+                        </span>
+                        {p.min_price !== p.max_price && (
+                          <span className="text-gray-400 text-xs">
+                            {" "}– ₹{Number(p.max_price).toLocaleString("en-IN")}
+                          </span>
+                        )}
+                        <span className="text-gray-400 text-xs"> / {p.unit}</span>
+                      </div>
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                        Compare
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Seller Modal */}
+      {modal.open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white z-10">
+              <div>
+                <h2 className="font-bold text-lg text-gray-900">{modal.name}</h2>
+                <p className="text-sm text-gray-500">
+                  {sellers.length} nursery dealer{sellers.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <button
+                onClick={closeModal}
+                className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {sellersLoading ? (
+                <div className="text-center py-8 text-gray-400">Loading…</div>
+              ) : sellers.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">No dealers.</div>
+              ) : (
+                sellers.map((s) => (
+                  <div
+                    key={s.id}
+                    className="border rounded-xl p-4 space-y-2 hover:border-green-300 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        {s.is_organic && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                            🌿 Certified Organic
+                          </span>
+                        )}
+                        <p className="text-gray-700 text-sm mt-1 leading-snug">
+                          {s.description}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-green-700 font-bold text-base">
+                          ₹{Number(s.price).toLocaleString("en-IN")}
+                        </p>
+                        <p className="text-xs text-gray-400">/ {s.unit}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span>🌿 {s.stock.toLocaleString("en-IN")} plants</span>
+                      {s.seller_district && (
+                        <span>
+                          📍 {s.seller_village || s.seller_district},{" "}
+                          {s.seller_district}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">
+                          🏪 {s.seller_name || "Nursery Dealer"}
+                        </p>
+                        {s.seller_phone && (
+                          <p className="text-xs text-gray-500">{s.seller_phone}</p>
+                        )}
+                      </div>
+                      {s.seller_phone && (
+                        <a
+                          href={`tel:${s.seller_phone}`}
+                          className="bg-green-600 text-white text-sm px-4 py-2 rounded-xl font-semibold hover:bg-green-700 transition-colors"
+                        >
+                          📞 Call Dealer
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="px-5 pb-5 pt-1">
+              <p className="text-xs text-center text-gray-400">
+                All nurseries verified by Jeevadhara admin team before listing
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
