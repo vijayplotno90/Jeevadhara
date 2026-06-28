@@ -26,6 +26,36 @@ async function upsertUser(name: string, phone: string, role: string, district: s
   return r[0].id;
 }
 
+async function ensureTables() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS farms (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      farmer_id TEXT NOT NULL,
+      farm_name TEXT,
+      district TEXT,
+      village TEXT,
+      total_area_acres NUMERIC,
+      crops_grown TEXT,
+      jeevadhara_certified BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await query(`
+    CREATE TABLE IF NOT EXISTS enquiries (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      farmer_id TEXT,
+      farmer_name TEXT,
+      farmer_phone TEXT,
+      service_category TEXT NOT NULL,
+      provider_name TEXT,
+      provider_phone TEXT,
+      enquiry_type TEXT DEFAULT 'enquire',
+      notes TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+}
+
 async function upsertFarm(farmerId: string, farmName: string, district: string, village: string, acres: number, crops: string) {
   const ex = await query<{ id: string }>("SELECT id FROM farms WHERE farmer_id = $1", [farmerId]);
   if (ex.length > 0) return;
@@ -44,6 +74,10 @@ async function count(table: string, col: string, val: string): Promise<number> {
 async function run() {
   try {
     const log: string[] = [];
+
+    // ENSURE TABLES EXIST
+    await ensureTables();
+    log.push("Tables: farms + enquiries created if missing");
 
     // USERS
     const ramuId    = await upsertUser("Ramu Reddy",     "9876543210", "farmer",   "Nalgonda",  "Solipeta");
@@ -180,14 +214,6 @@ async function run() {
     }
 
     // ENQUIRIES
-    await query(`CREATE TABLE IF NOT EXISTS enquiries (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      farmer_id TEXT, farmer_name TEXT, farmer_phone TEXT,
-      service_category TEXT NOT NULL, provider_name TEXT, provider_phone TEXT,
-      enquiry_type TEXT DEFAULT 'enquire', notes TEXT,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )`);
-
     if ((await count("enquiries", "farmer_id", ramuId)) === 0) {
       await query(
         `INSERT INTO enquiries (farmer_id,farmer_name,farmer_phone,service_category,provider_name,provider_phone,enquiry_type,notes,created_at) VALUES
