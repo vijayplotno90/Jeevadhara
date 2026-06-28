@@ -120,28 +120,34 @@ export default function FarmerDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome, {name}!</h1>
-          <p className="text-gray-500 text-sm mt-1">Farmer Dashboard - Jeevadhara AgriTech</p>
+
+      {/* Hero Banner */}
+      <div className="relative rounded-2xl overflow-hidden mb-8 bg-gradient-to-r from-green-800 via-green-700 to-emerald-600 px-8 py-7 shadow-lg">
+        <div className="absolute inset-0 opacity-10" style={{backgroundImage:"url('/hero-farmer.jpg')", backgroundSize:"cover", backgroundPosition:"center top"}} />
+        <div className="relative flex items-center justify-between">
+          <div>
+            <p className="text-green-200 text-xs font-semibold uppercase tracking-widest mb-1">🌾 Farmer Dashboard</p>
+            <h1 className="text-3xl font-bold text-white">Welcome, {name}!</h1>
+            <p className="text-green-200 text-sm mt-1">Your farm. Your price. Your buyers. Directly.</p>
+          </div>
+          <Link href="/list-produce" className="bg-amber-400 text-amber-900 px-5 py-2.5 rounded-xl font-bold hover:bg-amber-300 text-sm shadow-md shrink-0">
+            + List New Produce
+          </Link>
         </div>
-        <Link href="/list-produce" className="bg-green-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-green-700 text-sm">
-          + List New Produce
-        </Link>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label:"Active Listings",   value: activeCount,                  icon:"📦" },
-          { label:"Total Orders",      value: orders.length,                icon:"🛒" },
-          { label:"Revenue Earned",    value:`Rs${totalRevenue.toFixed(0)}`,icon:"💰" },
-          { label:"Service Enquiries", value: enquiries.length,             icon:"📞" },
+          { label:"Active Listings",   value: activeCount,                   icon:"📦", bg:"bg-green-50",  val:"text-green-700",  border:"border-green-200" },
+          { label:"Orders Received",   value: orders.length,                 icon:"🛒", bg:"bg-blue-50",   val:"text-blue-700",   border:"border-blue-200"  },
+          { label:"Revenue Earned",    value:`₹${totalRevenue.toFixed(0)}`,  icon:"💰", bg:"bg-amber-50",  val:"text-amber-700",  border:"border-amber-200" },
+          { label:"Service Enquiries", value: enquiries.length,              icon:"📞", bg:"bg-orange-50", val:"text-orange-700", border:"border-orange-200"},
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <div className="text-xl mb-1">{s.icon}</div>
-            <div className="text-2xl font-bold text-gray-900">{s.value}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
+          <div key={s.label} className={`${s.bg} rounded-xl border ${s.border} p-5`}>
+            <div className="text-2xl mb-2">{s.icon}</div>
+            <div className={`text-3xl font-bold ${s.val}`}>{s.value}</div>
+            <div className="text-xs text-gray-500 mt-1 font-medium">{s.label}</div>
           </div>
         ))}
       </div>
