@@ -3,6 +3,22 @@ import { query } from "../../../lib/db";
 
 export const dynamic = "force-dynamic";
 
+async function ensureFarmsTable() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS farms (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      farmer_id TEXT NOT NULL,
+      farm_name TEXT,
+      district TEXT,
+      village TEXT,
+      total_area_acres NUMERIC,
+      crops_grown TEXT,
+      jeevadhara_certified BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+}
+
 interface Farmer {
   id: string;
   name: string;
@@ -19,6 +35,7 @@ interface Farmer {
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureFarmsTable();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -55,6 +72,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureFarmsTable();
     const body = await req.json();
     const { name, phone, password, district, village, farm_name, crops_grown, total_area_acres } = body;
 
@@ -69,16 +87,16 @@ export async function POST(req: NextRequest) {
 
     const hash = `ph_${password || "farm123"}`;
     const users = await query<{ id: string }>(
-      `INSERT INTO users (name, phone, role, password_hash, created_at)
-       VALUES ($1, $2, 'farmer', $3, NOW()) RETURNING id`,
-      [name, phone, hash]
+      `INSERT INTO users (name, phone, role, district, village, created_at)
+       VALUES ($1, $2, 'farmer', $3, $4, NOW()) RETURNING id`,
+      [name, phone, district || "Telangana", village || ""]
     );
     const userId = users[0].id;
 
     await query(
       `INSERT INTO farms (farmer_id, farm_name, district, village, total_area_acres, crops_grown, jeevadhara_certified, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, FALSE, NOW())`,
-      [userId, farm_name || `${name}'s Farm`, district || "Telangana", village || "", total_area_acres || null, crops_grown || ""]
+      [userId, farm_name || (name + "'s Farm"), district || "Telangana", village || "", total_area_acres || null, crops_grown || ""]
     );
 
     return NextResponse.json({ id: userId, success: true }, { status: 201 });
