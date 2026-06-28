@@ -79,8 +79,8 @@ export default function HomePage() {
 
           <div className="relative hidden md:block">
             <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-br from-green-100 to-amber-100 blur-2xl" />
-            <div className="aspect-[4/3] w-full rounded-3xl bg-gradient-to-br from-green-100 to-amber-50 flex items-center justify-center shadow-glow">
-              <span className="text-9xl drop-shadow-xl">🌾</span>
+            <div className="aspect-[4/3] w-full rounded-3xl overflow-hidden shadow-glow">
+              <img src="/hero-farmer.jpg" alt="Telangana farmer with fresh produce" className="w-full h-full object-cover" />
             </div>
             <div className="absolute -bottom-6 -left-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
               <div className="flex items-center gap-3">
