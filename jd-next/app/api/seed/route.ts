@@ -35,7 +35,14 @@ async function ensureTables() {
 
 async function upsertUser(name: string, phone: string, role: string, district: string, village: string): Promise<string> {
   const ex = await query<{ id: string }>("SELECT id FROM users WHERE phone = $1", [phone]);
-  if (ex.length > 0) return ex[0].id;
+  if (ex.length > 0) {
+    // Force-update name/role/district so re-seeding fixes stale demo accounts
+    await query(
+      "UPDATE users SET name=$1, role=$2, district=$3, village=$4 WHERE phone=$5",
+      [name, role, district, village, phone]
+    );
+    return ex[0].id;
+  }
   const r = await query<{ id: string }>(
     "INSERT INTO users (name,phone,role,district,village,created_at) VALUES ($1,$2,$3,$4,$5,NOW()) RETURNING id",
     [name, phone, role, district, village]

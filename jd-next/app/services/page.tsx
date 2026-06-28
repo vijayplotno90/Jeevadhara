@@ -45,6 +45,7 @@ const CATEGORIES: Category[] = [
     tint: "bg-sky-500/10 text-sky-700",
     blurb: "Borewell drilling, camera inspection, flushing, pump repair and recharge — quoted up-front per foot.",
     providers: [
+      { name: "Suresh Services ⭐", desc: "Borewell drilling, pump installation & repair, camera inspection. Rs110/ft. Serving Warangal, Nalgonda & Nizamabad districts.", phone: "+91 98765 43212", city: "Warangal" },
       { name: "Sri Sai Borewells", desc: "4.5 & 6.5 inch rotary rigs, Rs110/ft. Camera inspection Rs2500/job.", phone: "+91 90100 11122", city: "Hyderabad" },
       { name: "Vetri Drillers", desc: "Tamil Nadu coverage, 800 ft capability, point-cartridge guarantee.", phone: "+91 94440 33445", city: "Coimbatore" },
       { name: "Aqua Borewell Services", desc: "Flushing, redevelopment, submersible pump install & repair.", phone: "+91 98480 76543", city: "Vijayawada" },

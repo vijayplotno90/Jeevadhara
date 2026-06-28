@@ -44,6 +44,9 @@ export default function LoginPage() {
       localStorage.setItem("jd_role",    data.role);
       localStorage.setItem("jd_name",    data.name);
       localStorage.setItem("jd_user_id", data.id);
+      if (data.role === "provider") {
+        localStorage.setItem("jd_service_type", data.service_type || "Borewell & Water Services");
+      }
 
       if (data.role === "farmer")   router.push("/farmer/dashboard");
       else if (data.role === "provider") router.push("/provider/dashboard");

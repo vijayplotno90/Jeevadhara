@@ -22,10 +22,13 @@ export default function ProviderDashboard() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
+  const [serviceType, setServiceType] = useState("Agri Services");
+
   useEffect(() => {
     const role = localStorage.getItem("jd_role");
     if (role !== "provider") { router.push("/auth/login"); return; }
     setName(localStorage.getItem("jd_name") || "Provider");
+    setServiceType(localStorage.getItem("jd_service_type") || "Borewell & Water Services");
 
     async function load() {
       try {
@@ -58,8 +61,8 @@ export default function ProviderDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">🏢 {name} — Lead Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">Verified farmer contacts in Telangana · IndiaMart-style CRM</p>
+          <h1 className="text-2xl font-bold text-gray-900">🏢 {name}</h1>
+          <p className="text-gray-500 text-sm mt-1">{serviceType} · Verified farmer leads in Telangana</p>
         </div>
         <div className="bg-orange-100 text-orange-800 px-4 py-2 rounded-lg text-sm font-semibold">
           {leads.length} Farmer Leads
