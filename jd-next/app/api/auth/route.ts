@@ -46,6 +46,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ token: makeToken(u.id), id: u.id, name: u.name, role: u.role });
     }
 
+    if (action === "seed-demos") {
+      const demos = [
+        { name: "Ramu Reddy", phone: "9876543210", role: "farmer", district: "Nalgonda", village: "Solipeta" },
+        { name: "Priya Sharma", phone: "9876543211", role: "consumer", district: "Hyderabad", village: "" },
+        { name: "Suresh Services", phone: "9876543212", role: "provider", district: "Warangal", village: "" },
+      ];
+      for (const d of demos) {
+        const existing = await query<{ id: string }>("SELECT id FROM users WHERE phone=$1", [d.phone]);
+        if (existing.length === 0) {
+          await query(
+            `INSERT INTO users (name, phone, role, district, village, created_at)
+             VALUES ($1,$2,$3,$4,$5,NOW())`,
+            [d.name, d.phone, d.role, d.district, d.village]
+          );
+        }
+      }
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Server error";
