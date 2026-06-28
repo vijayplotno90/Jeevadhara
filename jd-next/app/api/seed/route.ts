@@ -153,7 +153,7 @@ async function run() {
     if ((await cnt("tools", "seller_id", ramuId)) === 0) {
       await query(
         "INSERT INTO tools (seller_id,name,slug,category,brand,description,price,unit,stock,district,village,is_active,created_at) VALUES" +
-        "($1,'Honda Power Sprayer 16L','honda-sprayer-ramu','sprayer','Honda','16L knapsack sprayer. 1 season used.',3500,'piece',3,'Nalgonda','Solipeta',TRUE,NOW()-INTERVAL '4 days')," +
+        "($1,'Honda Power Sprayer 16L','honda-sprayer-ramu','powered','Honda','16L knapsack sprayer. 1 season used.',3500,'piece',3,'Nalgonda','Solipeta',TRUE,NOW()-INTERVAL '4 days')," +
         "($1,'Drip Irrigation Kit 1 Acre','drip-kit-ramu','irrigation',NULL,'Complete drip set. Mainline+laterals+drippers.',8500,'set',5,'Nalgonda','Solipeta',TRUE,NOW()-INTERVAL '5 days')",
         [ramuId]
       );
@@ -163,7 +163,7 @@ async function run() {
     if ((await cnt("tools", "seller_id", venkatId)) === 0) {
       await query(
         "INSERT INTO tools (seller_id,name,slug,category,brand,description,price,unit,stock,district,village,is_active,created_at) VALUES" +
-        "($1,'Rotavator 7 Feet','rotavator-venkat','tillage',NULL,'7ft rotavator for 50HP+ tractors.',45000,'piece',1,'Warangal','Hasanparthy',TRUE,NOW()-INTERVAL '3 days')",
+        "($1,'Rotavator 7 Feet','rotavator-venkat','powered',NULL,'7ft rotavator for 50HP+ tractors.',45000,'piece',1,'Warangal','Hasanparthy',TRUE,NOW()-INTERVAL '3 days')",
         [venkatId]
       );
       log.push("Tools: 1 from Venkat");
