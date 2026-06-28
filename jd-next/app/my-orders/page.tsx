@@ -38,9 +38,8 @@ export default function MyOrdersPage() {
   const [name, setName]       = useState("");
 
   useEffect(() => {
-    const role = localStorage.getItem("jd_role");
     const uid  = localStorage.getItem("jd_user_id");
-    if (!uid || role !== "consumer") {
+    if (!uid) {
       router.push("/auth/login");
       return;
     }

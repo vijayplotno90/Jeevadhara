@@ -20,13 +20,14 @@ interface Enquiry {
 }
 
 const SERVICE_HUB = [
+  { label:"My Purchases",         href:"/my-orders",    desc:"Orders you placed as buyer" },
+  { label:"Fresh Harvest",        href:"/fresh-harvest",desc:"Buy from other farmers" },
   { label:"Livestock Bazar",      href:"/animals",      desc:"Buy/sell cattle, goats, poultry" },
   { label:"Vehicles and Tractors",href:"/vehicles",     desc:"Rent tractors, tillers, harvesters" },
   { label:"Farm Tools",           href:"/implements",   desc:"Equipment and tool rentals" },
   { label:"Nursery",              href:"/plantation",   desc:"Seeds, saplings, plants" },
   { label:"Honey Market",         href:"/honey",        desc:"Wild honey, bee farming" },
   { label:"Egg Prices",           href:"/egg-prices",   desc:"Daily NECC egg prices" },
-  { label:"Web Stories",          href:"/web-stories",  desc:"Agri tips and farmer stories" },
   { label:"Kisan Expert",         href:"/jankari",      desc:"Talk to agri experts" },
   { label:"Services Hub",         href:"/services",     desc:"Borewell, solar, insurance..." },
 ];

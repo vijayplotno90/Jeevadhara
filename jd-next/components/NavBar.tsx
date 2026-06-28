@@ -118,7 +118,7 @@ export default function NavBar() {
       ? "/farmer/dashboard"
       : role === "provider"
       ? "/provider/dashboard"
-      : "/dashboard/consumer";
+      : "/my-orders";
 
   function logout() {
     localStorage.removeItem("jd_token");
@@ -171,15 +171,13 @@ export default function NavBar() {
           {/* Auth */}
           {role ? (
             <>
-              {role === "consumer" && (
-                <Link
-                  href="/my-orders"
-                  className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium transition hover:border-green-600 hover:text-green-700 sm:inline-flex"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  My Orders
-                </Link>
-              )}
+              <Link
+                href="/my-orders"
+                className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium transition hover:border-green-600 hover:text-green-700 sm:inline-flex"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                My Orders
+              </Link>
               <Link
                 href={dashHref}
                 className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium transition hover:border-green-600 hover:text-green-700 sm:inline-flex"
