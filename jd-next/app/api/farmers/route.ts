@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
                 f.farm_name, f.district, f.village, f.total_area_acres AS land_acres,
                 f.jeevadhara_certified, f.crops_grown
          FROM users u
-         JOIN farms f ON f.farmer_id = u.id
+         JOIN farms f ON f.farmer_id = u.id::text
          WHERE u.id = $1 AND u.role = 'farmer'
          LIMIT 1`,
         [id]
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
               f.farm_name, f.district, f.village, f.total_area_acres AS land_acres,
               f.jeevadhara_certified, f.crops_grown
        FROM users u
-       JOIN farms f ON f.farmer_id = u.id
+       JOIN farms f ON f.farmer_id = u.id::text
        WHERE u.role = 'farmer'
        ORDER BY f.jeevadhara_certified DESC, u.created_at DESC`
     );
