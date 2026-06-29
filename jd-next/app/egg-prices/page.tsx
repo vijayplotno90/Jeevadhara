@@ -87,11 +87,13 @@ export default function EggPricesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className={`bg-gradient-to-r ${gradient} text-white px-4 py-8`}>
-        <h1 className="text-2xl font-bold">Egg Market</h1>
-        <p className="text-white/80 text-sm mt-1">Daily rates by egg type - Telangana and major Indian cities</p>
-        <p className="text-white/60 text-xs mt-1">
-          Updated: {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
-        </p>
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold">🥚 Egg Market</h1>
+          <p className="text-white/80 text-sm mt-1">Daily rates by egg type — India-wide</p>
+          <p className="text-white/60 text-xs mt-1">
+            Updated: {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
+        </div>
       </div>
 
       <div className="bg-white border-b shadow-sm sticky top-0 z-10">

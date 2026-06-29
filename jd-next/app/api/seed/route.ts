@@ -142,6 +142,15 @@ async function run() {
       log.push("Products: 3 from Lakshmi");
     }
 
+    // Fix honey product images (run every seed)
+    await query(`UPDATE products SET image_url='/honey/raw-honey.jpg' WHERE name ILIKE '%forest%honey%' OR name ILIKE '%wild%honey%' OR name ILIKE '%multiflora%'`);
+    await query(`UPDATE products SET image_url='/honey/beeboxes.webp' WHERE name ILIKE '%cerana%' OR name ILIKE '%mellifera%'`);
+    await query(`UPDATE products SET image_url='/honey/honeycomb.jpg' WHERE name ILIKE '%honeycomb%'`);
+    await query(`UPDATE products SET image_url='/honey/beewax.jpg' WHERE name ILIKE '%beeswax%' OR name ILIKE '%bee wax%'`);
+    await query(`UPDATE products SET image_url='/honey/propolis.jpg' WHERE name ILIKE '%propolis%'`);
+    await query(`UPDATE products SET image_url='/honey/royal-jelly.jpg' WHERE name ILIKE '%royal%jelly%'`);
+    log.push("Honey images updated");
+
     // Always rebuild livestock with correct breed-based slugs and 3 sellers per breed
     await query("DELETE FROM livestock");
     await query(
