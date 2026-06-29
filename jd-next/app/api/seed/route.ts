@@ -156,32 +156,41 @@ async function run() {
     try {
       await query(`UPDATE products SET image_url='/honey/forest-wild-honey.jpg' WHERE name ILIKE '%forest%honey%'`);
       await query(`UPDATE products SET image_url='/honey/multiflora-wild-honey.jpg' WHERE name ILIKE '%multiflora%'`);
-      await query(`UPDATE products SET image_url='/honey/beeboxes.webp', name='Apis Cerana Beebox', category='honey' WHERE name ILIKE '%cerana%'`);
-      await query(`UPDATE products SET image_url='/honey/beeboxes.webp', name='Mellifera Beebox', category='honey' WHERE name ILIKE '%mellifera%'`);
+      await query(`UPDATE products SET image_url='/honey/beeboxes.webp', name='Apis Cerana Bee Boxes', category='honey' WHERE name ILIKE '%cerana%'`);
+      await query(`UPDATE products SET image_url='/honey/beeboxes.webp', name='Mellifera Bee Boxes', category='honey' WHERE name ILIKE '%mellifera%'`);
       await query(`UPDATE products SET image_url='/honey/honeycomb.jpg' WHERE name ILIKE '%honeycomb%'`);
       await query(`UPDATE products SET image_url='/honey/beewax.jpg' WHERE name ILIKE '%beeswax%' OR name ILIKE '%bee wax%'`);
       await query(`UPDATE products SET image_url='/honey/propolis.jpg' WHERE name ILIKE '%propolis%'`);
       await query(`UPDATE products SET image_url='/honey/royal-jelly.jpg' WHERE name ILIKE '%royal%jelly%'`);
     } catch { /* image_url column may not exist yet, skip */ }
-    // Add extra cerana sellers if fewer than 3 exist
+    // Add extra cerana sellers if fewer than 2 exist (price range 4500-5000)
     const ceranaCount = (await query<{c:string}>(`SELECT COUNT(*) AS c FROM products WHERE name ILIKE '%cerana%'`))[0]?.c;
+    if (parseInt(ceranaCount||'0') < 1) {
+      await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Apis Cerana Bee Boxes','honey',4500,'beebox',5,'Apis Cerana 8-frame. Colony + queen. Ready to place.','Nalgonda',FALSE,TRUE,NOW()-INTERVAL '5 days')`, [ramuId]);
+    }
     if (parseInt(ceranaCount||'0') < 2) {
-      await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Apis Cerana Beebox','honey',4000,'beebox',4,'Cerana 6-month established colony.','Warangal',FALSE,TRUE,NOW()-INTERVAL '3 days')`, [venkatId]);
+      await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Apis Cerana Bee Boxes','honey',5000,'beebox',3,'Premium Cerana. High-yield colony. Vet inspected.','Warangal',FALSE,TRUE,NOW()-INTERVAL '3 days')`, [venkatId]);
     }
-    if (parseInt(ceranaCount||'0') < 3) {
-      await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Apis Cerana Beebox','honey',5000,'beebox',2,'Premium Cerana. High-yield. Vet inspected.','Nizamabad',FALSE,TRUE,NOW()-INTERVAL '2 days')`, [lakshmiId]);
-    }
-    // Add extra mellifera sellers if fewer than 3 exist
+    // Fix cerana prices to correct range
+    await query(`UPDATE products SET price=4500 WHERE name ILIKE '%cerana%' AND price < 4500`);
+    await query(`UPDATE products SET price=5000 WHERE name ILIKE '%cerana%' AND price > 5000`);
+
+    // Add extra mellifera sellers if fewer than 2 exist (price range 5000-5500)
     const melliferaCount = (await query<{c:string}>(`SELECT COUNT(*) AS c FROM products WHERE name ILIKE '%mellifera%'`))[0]?.c;
+    if (parseInt(melliferaCount||'0') < 1) {
+      await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Mellifera Bee Boxes','honey',5000,'beebox',4,'Apis Mellifera 10-frame Langstroth. New colony.','Nalgonda',FALSE,TRUE,NOW()-INTERVAL '4 days')`, [ramuId]);
+    }
     if (parseInt(melliferaCount||'0') < 2) {
-      await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Mellifera Beebox','honey',4750,'beebox',3,'Mellifera 10-frame. 3-month colony.','Warangal',FALSE,TRUE,NOW()-INTERVAL '3 days')`, [venkatId]);
+      await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Mellifera Bee Boxes','honey',5500,'beebox',2,'Full-strength Mellifera. Export quality.','Nizamabad',FALSE,TRUE,NOW()-INTERVAL '6 days')`, [lakshmiId]);
     }
-    if (parseInt(melliferaCount||'0') < 3) {
-      await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Mellifera Beebox','honey',5500,'beebox',2,'Full-strength Mellifera. Export quality.','Nizamabad',FALSE,TRUE,NOW()-INTERVAL '6 days')`, [lakshmiId]);
-    }
-    // Final image fix after all inserts
+    // Fix mellifera prices to correct range
+    await query(`UPDATE products SET price=5000 WHERE name ILIKE '%mellifera%' AND price < 5000`);
+    await query(`UPDATE products SET price=5500 WHERE name ILIKE '%mellifera%' AND price > 5500`);
+
+    // Final image + name fix after all inserts
     try {
-      await query(`UPDATE products SET image_url='/honey/beeboxes.webp' WHERE name ILIKE '%cerana%' OR name ILIKE '%mellifera%'`);
+      await query(`UPDATE products SET image_url='/honey/beeboxes.webp', name='Apis Cerana Bee Boxes' WHERE name ILIKE '%cerana%'`);
+      await query(`UPDATE products SET image_url='/honey/beeboxes.webp', name='Mellifera Bee Boxes' WHERE name ILIKE '%mellifera%'`);
       await query(`UPDATE products SET image_url='/honey/forest-wild-honey.jpg' WHERE name ILIKE '%forest%honey%'`);
     } catch { /* skip if column missing */ }
     log.push("Honey images + beebox names + prices updated");
