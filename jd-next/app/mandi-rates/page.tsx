@@ -9,20 +9,32 @@ type MandiRate = {
 };
 
 const CROP_META: Record<string, { emoji: string; gradient: string }> = {
-  Tomato: { emoji: "🍅", gradient: "from-red-200 to-orange-100" },
-  Onion: { emoji: "🧅", gradient: "from-rose-200 to-purple-100" },
-  Potato: { emoji: "🥔", gradient: "from-amber-200 to-yellow-100" },
-  Wheat: { emoji: "🌾", gradient: "from-amber-100 to-yellow-50" },
-  Rice: { emoji: "🍚", gradient: "from-stone-100 to-amber-50" },
-  Cotton: { emoji: "☁️", gradient: "from-slate-100 to-stone-50" },
-  Maize: { emoji: "🌽", gradient: "from-yellow-200 to-amber-100" },
-  Soybean: { emoji: "🫘", gradient: "from-lime-200 to-green-100" },
+  Tomato:    { emoji: "🍅", gradient: "from-red-200 to-orange-100" },
+  Onion:     { emoji: "🧅", gradient: "from-rose-200 to-purple-100" },
+  Potato:    { emoji: "🥔", gradient: "from-amber-200 to-yellow-100" },
+  Wheat:     { emoji: "🌾", gradient: "from-amber-100 to-yellow-50" },
+  Rice:      { emoji: "🍚", gradient: "from-stone-100 to-amber-50" },
+  Cotton:    { emoji: "☁️", gradient: "from-slate-100 to-stone-50" },
+  Maize:     { emoji: "🌽", gradient: "from-yellow-200 to-amber-100" },
+  Soybean:   { emoji: "🫘", gradient: "from-lime-200 to-green-100" },
   Groundnut: { emoji: "🥜", gradient: "from-amber-200 to-orange-100" },
-  Chilli: { emoji: "🌶️", gradient: "from-red-300 to-rose-100" },
-  Turmeric: { emoji: "🟡", gradient: "from-yellow-300 to-orange-200" },
-  Mango: { emoji: "🥭", gradient: "from-yellow-300 to-orange-200" },
+  Chilli:    { emoji: "🌶️", gradient: "from-red-300 to-rose-100" },
+  Turmeric:  { emoji: "🟡", gradient: "from-yellow-300 to-orange-200" },
+  Mango:     { emoji: "🥭", gradient: "from-yellow-300 to-orange-200" },
   Sugarcane: { emoji: "🎋", gradient: "from-lime-200 to-emerald-100" },
 };
+
+const CROP_IMG: Record<string, string> = {
+  Tomato:    "/mandi/tomato.jpg",
+  Onion:     "/mandi/onion.jpg",
+  Wheat:     "/mandi/wheat.jpg",
+  Rice:      "/mandi/rice.jpg",
+  Cotton:    "/mandi/cotton.jpg",
+  Groundnut: "/mandi/groundnut.jpg",
+  Chilli:    "/mandi/chilli.jpg",
+  Turmeric:  "/mandi/turmeric.jpg",
+};
+
 function meta(crop: string) {
   return CROP_META[crop] ?? { emoji: "🌱", gradient: "from-emerald-100 to-green-50" };
 }
@@ -105,19 +117,31 @@ export default function MandiRatesPage() {
                   const m = meta(g.crop);
                   return (
                     <button key={g.crop} onClick={() => setSelectedCrop(g.crop)}
-                      className={`rounded-2xl border border-gray-100 bg-gradient-to-br ${m.gradient} p-5 text-left shadow-soft hover:-translate-y-0.5 hover:shadow-card transition-all`}>
+                      className="rounded-2xl border border-gray-100 overflow-hidden text-left shadow-soft hover:-translate-y-0.5 hover:shadow-card transition-all bg-white">
+                      {CROP_IMG[g.crop] ? (
+                        <div className="h-28 w-full overflow-hidden relative">
+                          <img src={CROP_IMG[g.crop]} alt={g.crop}
+                            className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                        </div>
+                      ) : (
+                        <div className={`h-28 w-full bg-gradient-to-br ${m.gradient} flex items-center justify-center`}>
+                          <span className="text-4xl">{m.emoji}</span>
+                        </div>
+                      )}
+                      <div className="p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-4xl">{m.emoji}</span>
+                        <span className="text-sm font-medium text-gray-500">{g.marketCount} market{g.marketCount !== 1 ? "s" : ""}</span>
                         <TrendingUp className="h-4 w-4 text-green-700" />
                       </div>
-                      <h3 className="mt-3 font-serif font-bold text-gray-900">{g.crop}</h3>
+                      <h3 className="mt-2 font-serif font-bold text-gray-900">{g.crop}</h3>
                       {g.crop_hi && <p className="text-xs text-gray-500">{g.crop_hi}</p>}
-                      <div className="mt-3 flex items-baseline gap-1">
+                      <div className="mt-2 flex items-baseline gap-1">
                         <IndianRupee className="h-3.5 w-3.5 text-green-700" />
                         <span className="font-serif text-2xl font-bold text-green-700">{g.avgModal.toLocaleString()}</span>
                         <span className="text-xs text-gray-500">/quintal</span>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">{g.marketCount} market{g.marketCount !== 1 ? "s" : ""}</p>
+                      </div>
                     </button>
                   );
                 })}
