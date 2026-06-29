@@ -65,6 +65,7 @@ export default async function VehiclesPage({
       `SELECT
          v.slug, MIN(v.name) AS name,
          v.vehicle_type, v.condition,
+         MIN(COALESCE(v.image_url, '')) AS image_url,
          COUNT(*)::int                           AS seller_count,
          MIN(v.price)                            AS min_price,
          MAX(v.price)                            AS max_price,
@@ -194,8 +195,8 @@ function NewVehicleCard({ v, vtype, vcond }: { v: VehicleRow; vtype: string; vco
       </div>
 
       <div className="relative h-52 bg-gray-100 overflow-hidden pt-7">
-        {VEH_IMG[v.slug] ? (
-          <img src={VEH_IMG[v.slug]} alt={v.name}
+        {(v.image_url || VEH_IMG[v.slug]) ? (
+          <img src={v.image_url || VEH_IMG[v.slug]} alt={v.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         ) : (
           <div className="w-full h-full bg-blue-100 flex items-center justify-center text-4xl">🚜</div>
@@ -242,8 +243,8 @@ function UsedVehicleCard({ v, vtype, vcond }: { v: VehicleRow; vtype: string; vc
       className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all group">
 
       <div className="relative h-52 bg-gray-100 overflow-hidden">
-        {VEH_IMG[v.slug] ? (
-          <img src={VEH_IMG[v.slug]} alt={v.name}
+        {(v.image_url || VEH_IMG[v.slug]) ? (
+          <img src={v.image_url || VEH_IMG[v.slug]} alt={v.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         ) : (
           <div className="w-full h-full bg-blue-100 flex items-center justify-center text-4xl">🚜</div>
