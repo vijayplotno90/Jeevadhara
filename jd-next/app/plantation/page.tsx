@@ -71,10 +71,12 @@ export default function PlantationPage() {
   return (
     <div className="min-h-screen bg-green-50">
       <div className="bg-gradient-to-r from-green-700 to-emerald-500 text-white px-4 py-8">
-        <h1 className="text-2xl font-bold">Nursery and Plantation</h1>
-        <p className="text-green-100 text-sm mt-1">
-          Certified saplings from verified nursery dealers - mango, banana, coconut, teak and more
-        </p>
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold">🌱 Nursery & Plantation</h1>
+          <p className="text-green-100 text-sm mt-1">
+            Certified saplings from verified nursery dealers — mango, banana, coconut, teak and more
+          </p>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">

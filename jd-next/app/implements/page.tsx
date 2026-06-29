@@ -101,20 +101,22 @@ export default function ImplementsPage() {
         </div>
       </div>
 
-      <div className="sticky top-0 z-10 bg-white border-b shadow-sm px-4 py-3 flex gap-3 overflow-x-auto">
-        {Object.entries(CAT_LABELS).map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setCat(k)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              cat === k
-                ? "bg-orange-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-orange-50"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm px-4 py-3">
+        <div className="max-w-7xl mx-auto flex gap-3 overflow-x-auto">
+          {Object.entries(CAT_LABELS).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setCat(k)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                cat === k
+                  ? "bg-orange-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-orange-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
