@@ -48,6 +48,21 @@ const TOOL_EMOJIS: Record<string, string> = {
   wheelbarrow: "Barrow",
 };
 
+const TOOL_IMG: Record<string, string> = {
+  "honda-sprayer-ramu":  "/tools/honda-sprayer.jpg",
+  "drip-kit-ramu":       "/tools/drip-irrigation-kit.jpg",
+  "rotavator-venkat":    "/tools/rotavator.jpg",
+  "garden-fork":         "/tools/garden-fork.jpg",
+  "hand-trowel":         "/tools/hand-trowel.jpg",
+  "hoe":                 "/tools/hoe.jpg",
+  "rake":                "/tools/rake.jpg",
+  "shovel":              "/tools/shovel.jpg",
+  "sickle":              "/tools/sickle.jpg",
+  "spade":               "/tools/spade.jpg",
+  "knapsack-sprayer":    "/tools/sprayer.jpg",
+  "wheelbarrow":         "/tools/wheelbarrow.jpg",
+};
+
 export default function ImplementsPage() {
   const [tools, setTools] = useState<ToolRow[]>([]);
   const [cat, setCat] = useState("all");
@@ -133,9 +148,9 @@ export default function ImplementsPage() {
                 className="bg-white rounded-2xl shadow hover:shadow-md transition-all text-left overflow-hidden group"
               >
                 <div className="relative h-40 bg-orange-50 flex items-center justify-center">
-                  {t.image_url ? (
+                  {(t.image_url || TOOL_IMG[t.slug]) ? (
                     <Image
-                      src={t.image_url}
+                      src={t.image_url || TOOL_IMG[t.slug]}
                       alt={t.name}
                       fill
                       className="object-contain p-3"
