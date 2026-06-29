@@ -33,19 +33,21 @@ async function ensureTables() {
   )`);
 }
 
-async function upsertUser(name: string, phone: string, role: string, district: string, village: string): Promise<string> {
+async function upsertUser(name: string, phone: string, role: string, district: string, village: string, pin: string): Promise<string> {
+  // Ensure pin column exists
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS pin VARCHAR(10)`);
   const ex = await query<{ id: string }>("SELECT id FROM users WHERE phone = $1", [phone]);
   if (ex.length > 0) {
-    // Force-update name/role/district so re-seeding fixes stale demo accounts
+    // Force-update name/role/district/pin so re-seeding always fixes demo accounts
     await query(
-      "UPDATE users SET name=$1, role=$2, district=$3, village=$4 WHERE phone=$5",
-      [name, role, district, village, phone]
+      "UPDATE users SET name=$1, role=$2, district=$3, village=$4, pin=$5 WHERE phone=$6",
+      [name, role, district, village, pin, phone]
     );
     return ex[0].id;
   }
   const r = await query<{ id: string }>(
-    "INSERT INTO users (name,phone,role,district,village,created_at) VALUES ($1,$2,$3,$4,$5,NOW()) RETURNING id",
-    [name, phone, role, district, village]
+    "INSERT INTO users (name,phone,role,district,village,pin,created_at) VALUES ($1,$2,$3,$4,$5,$6,NOW()) RETURNING id",
+    [name, phone, role, district, village, pin]
   );
   return r[0].id;
 }
@@ -71,11 +73,11 @@ async function run() {
     await ensureTables();
     log.push("Tables: farms + enquiries ensured");
 
-    const ramuId    = await upsertUser("Ramu Reddy",     "9876543210", "farmer",   "Nalgonda",  "Solipeta");
-    const venkatId  = await upsertUser("Venkat Rao",     "9876543213", "farmer",   "Warangal",  "Hasanparthy");
-    const lakshmiId = await upsertUser("Lakshmi Devi",   "9876543214", "farmer",   "Nizamabad", "Armoor");
-    const priyaId   = await upsertUser("Priya Sharma",   "9876543211", "consumer", "Hyderabad", "");
-    await upsertUser("Suresh Services", "9876543212", "provider", "Warangal", "");
+    const ramuId    = await upsertUser("Ramu Reddy",     "9876543210", "farmer",   "Nalgonda",  "Solipeta",   "1111");
+    const venkatId  = await upsertUser("Venkat Rao",     "9876543213", "farmer",   "Warangal",  "Hasanparthy","2222");
+    const lakshmiId = await upsertUser("Lakshmi Devi",   "9876543214", "farmer",   "Nizamabad", "Armoor",     "3333");
+    const priyaId   = await upsertUser("Priya Sharma",   "9876543211", "consumer", "Hyderabad", "",           "4444");
+    await upsertUser("Suresh Services", "9876543212", "provider", "Warangal", "", "5555");
     log.push("Users: 5 demo accounts");
 
     await upsertFarm(ramuId,    "Ramu Farms",          "Nalgonda",  "Solipeta",   8.5,  "Tomatoes, Rice, Red Chilli, Turmeric");
@@ -121,9 +123,9 @@ async function run() {
 
     if ((await cnt("livestock", "farmer_id", ramuId)) === 0) {
       await query(
-        "INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,milk_liters_per_day,lactation_number,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,is_active,created_at) VALUES" +
-        "($1,'Gir Cow','gir-cow-ramu','cattle',4,2,'Golden Brown',420,12,2,'Excellent','Fully Vaccinated','None',85000,1,'Nalgonda','Solipeta','Purebred Gir. 12L/day. FMD vaccinated.',TRUE,NOW()-INTERVAL '3 days')," +
-        "($1,'Murrah Buffalo','murrah-buffalo-ramu','buffalo',5,0,'Black',550,15,3,'Excellent','Fully Vaccinated','None',95000,1,'Nalgonda','Solipeta','15L/day. Recently calved.',TRUE,NOW()-INTERVAL '5 days')",
+        "INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,milk_liters_per_day,lactation_number,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,image_url,is_active,created_at) VALUES" +
+        "($1,'Gir Cow','gir-cow-ramu','cattle',4,2,'Golden Brown',420,12,2,'Excellent','Fully Vaccinated','None',85000,1,'Nalgonda','Solipeta','Purebred Gir. 12L/day. FMD vaccinated.','/livestock/gir1.png',TRUE,NOW()-INTERVAL '3 days')," +
+        "($1,'Murrah Buffalo','murrah-buffalo-ramu','buffalo',5,0,'Black',550,15,3,'Excellent','Fully Vaccinated','None',95000,1,'Nalgonda','Solipeta','15L/day. Recently calved.','/livestock/murrah.png',TRUE,NOW()-INTERVAL '5 days')",
         [ramuId]
       );
       log.push("Livestock: 2 from Ramu");
@@ -131,9 +133,9 @@ async function run() {
 
     if ((await cnt("livestock", "farmer_id", venkatId)) === 0) {
       await query(
-        "INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,is_active,created_at,eggs_per_year) VALUES" +
-        "($1,'Boer Goat','boer-goat-venkat','goat',1,6,'White-Brown',35,'Good','Vaccinated','None',12000,4,'Warangal','Hasanparthy','Quality Boer meat goats.',TRUE,NOW()-INTERVAL '2 days',NULL)," +
-        "($1,'Kadaknath Chicken','kadaknath-venkat','poultry',0,8,'Black',2,'Good','Vaccinated','None',850,20,'Warangal','Hasanparthy','High protein black meat chicken.',TRUE,NOW()-INTERVAL '4 days',180)",
+        "INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,image_url,is_active,created_at,eggs_per_year) VALUES" +
+        "($1,'Boer Goat','boer-goat-venkat','goat',1,6,'White-Brown',35,'Good','Vaccinated','None',12000,4,'Warangal','Hasanparthy','Quality Boer meat goats.','/livestock/gir1.png',TRUE,NOW()-INTERVAL '2 days',NULL)," +
+        "($1,'Kadaknath Chicken','kadaknath-venkat','poultry',0,8,'Black',2,'Good','Vaccinated','None',850,20,'Warangal','Hasanparthy','High protein black meat chicken.','/livestock/Kadaknath.webp',TRUE,NOW()-INTERVAL '4 days',180)",
         [venkatId]
       );
       log.push("Livestock: 2 from Venkat");

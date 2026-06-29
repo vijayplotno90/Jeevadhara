@@ -12,6 +12,15 @@ const CATS = [
   { value: "fish",    label: "🐟 Fish Seeds" },
 ];
 
+const CAT_IMG: Record<string, string> = {
+  cattle:  "/livestock/gir1.png",
+  buffalo: "/livestock/murrah.png",
+  poultry: "/livestock/Kadaknath.webp",
+  sheep:   "/livestock/Deccani-Sheep.webp",
+  fish:    "/livestock/Rohu.webp",
+  goat:    "/livestock/gir1.png",
+};
+
 const CAT_COLOR: Record<string, string> = {
   cattle:  "bg-amber-100 text-amber-800",
   buffalo: "bg-slate-100 text-slate-700",
@@ -123,7 +132,7 @@ export default async function AnimalsPage({
             <Link key={b.slug} href={`/animals/${b.slug}`}
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group">
               <div className="relative h-52 bg-gray-100 overflow-hidden">
-                <img src={b.image_url || "/livestock/gir1.png"} alt={b.breed}
+                <img src={b.image_url || CAT_IMG[b.category] || "/livestock/gir1.png"} alt={b.breed}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 {b.has_vet_certified && (
                   <span className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-medium">
