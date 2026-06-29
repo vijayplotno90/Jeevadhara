@@ -217,8 +217,8 @@ async function run() {
     if ((await cnt("tools", "seller_id", ramuId)) === 0) {
       await query(
         "INSERT INTO tools (seller_id,name,slug,category,brand,description,price,unit,stock,district,village,image_url,is_active,created_at) VALUES" +
-        "($1,'Honda Power Sprayer 16L','honda-sprayer-ramu','powered','Honda','16L knapsack sprayer. 1 season used.',3500,'piece',3,'Nalgonda','Solipeta','/tools/sprayer.jpg',TRUE,NOW()-INTERVAL '4 days')," +
-        "($1,'Drip Irrigation Kit','drip-kit-ramu','irrigation',NULL,'Complete drip set. Mainline, laterals, drippers. Ready to install.',8500,'set',5,'Nalgonda','Solipeta','/tools/wheelbarrow.jpg',TRUE,NOW()-INTERVAL '5 days')",
+        "($1,'Honda Power Sprayer 16L','honda-sprayer-ramu','powered','Honda','16L knapsack sprayer. 1 season used.',3500,'piece',3,'Nalgonda','Solipeta','/tools/honda-sprayer.jpg',TRUE,NOW()-INTERVAL '4 days')," +
+        "($1,'Drip Irrigation Kit','drip-kit-ramu','irrigation',NULL,'Complete drip set. Mainline, laterals, drippers. Ready to install.',8500,'set',5,'Nalgonda','Solipeta','/tools/drip-irrigation-kit.jpg',TRUE,NOW()-INTERVAL '5 days')",
         [ramuId]
       );
       log.push("Tools: 2 from Ramu");
@@ -227,16 +227,16 @@ async function run() {
     if ((await cnt("tools", "seller_id", venkatId)) === 0) {
       await query(
         "INSERT INTO tools (seller_id,name,slug,category,brand,description,price,unit,stock,district,village,image_url,is_active,created_at) VALUES" +
-        "($1,'Rotavator 7 Feet','rotavator-venkat','powered',NULL,'7ft rotavator for 50HP+ tractors. PTO working.',45000,'piece',1,'Warangal','Hasanparthy','/tools/hoe.jpg',TRUE,NOW()-INTERVAL '3 days')",
+        "($1,'Rotavator 7 Feet','rotavator-venkat','powered',NULL,'7ft rotavator for 50HP+ tractors. PTO working.',45000,'piece',1,'Warangal','Hasanparthy','/tools/rotavator.jpg',TRUE,NOW()-INTERVAL '3 days')",
         [venkatId]
       );
       log.push("Tools: 1 from Venkat");
     }
 
     // Fix tool names + images for existing DB records
-    await query(`UPDATE tools SET name='Drip Irrigation Kit', image_url='/tools/wheelbarrow.jpg' WHERE name ILIKE '%drip%1%acre%' OR name ILIKE '%drip%irrigation%'`);
-    await query(`UPDATE tools SET image_url='/tools/sprayer.jpg' WHERE name ILIKE '%sprayer%' OR name ILIKE '%honda%'`);
-    await query(`UPDATE tools SET image_url='/tools/hoe.jpg' WHERE name ILIKE '%rotavator%'`);
+    await query(`UPDATE tools SET name='Drip Irrigation Kit', image_url='/tools/drip-irrigation-kit.jpg' WHERE name ILIKE '%drip%'`);
+    await query(`UPDATE tools SET image_url='/tools/honda-sprayer.jpg' WHERE name ILIKE '%sprayer%' OR name ILIKE '%honda%'`);
+    await query(`UPDATE tools SET image_url='/tools/rotavator.jpg' WHERE name ILIKE '%rotavator%'`);
 
     if ((await cnt("orders", "customer_id", priyaId)) === 0) {
       const t = await query<{ id: string }>("SELECT id FROM products WHERE farmer_id=$1 AND name='Organic Tomatoes' LIMIT 1", [ramuId]);
