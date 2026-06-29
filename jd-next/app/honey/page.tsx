@@ -29,25 +29,25 @@ interface SellerRow {
 }
 
 const HONEY_IMG: Record<string, string> = {
-  "raw-forest-honey":             "/honey/forest-wild-honey.jpg",
-  "multiflora-wild-honey":        "/honey/multiflora-wild-honey.jpg",
-  "apis-cerana-beebox-for-sale":  "/honey/beeboxes.webp",
-  "mellifera-beebox-for-sale":    "/honey/beeboxes.webp",
-  "raw-honeycomb":                "/honey/honeycomb.jpg",
-  "pure-beeswax":                 "/honey/beewax.jpg",
-  "propolis-extract":             "/honey/propolis.jpg",
-  "royal-jelly":                  "/honey/royal-jelly.jpg",
+  "raw-forest-honey":       "/honey/forest-wild-honey.jpg",
+  "multiflora-wild-honey":  "/honey/multiflora-wild-honey.jpg",
+  "apis-cerana-beebox":     "/honey/beeboxes.webp",
+  "mellifera-beebox":       "/honey/beeboxes.webp",
+  "raw-honeycomb":          "/honey/honeycomb.jpg",
+  "pure-beeswax":           "/honey/beewax.jpg",
+  "propolis-extract":       "/honey/propolis.jpg",
+  "royal-jelly":            "/honey/royal-jelly.jpg",
 };
 
 const HONEY_EMOJIS: Record<string, string> = {
-  "raw-forest-honey":             "Forest Honey",
-  "multiflora-wild-honey":        "Wild Honey",
-  "apis-cerana-beebox-for-sale":  "Cerana Box",
-  "mellifera-beebox-for-sale":    "Mellifera Box",
-  "raw-honeycomb":                "Honeycomb",
-  "pure-beeswax":                 "Beeswax",
-  "propolis-extract":             "Propolis",
-  "royal-jelly":                  "Royal Jelly",
+  "raw-forest-honey":       "Forest Honey",
+  "multiflora-wild-honey":  "Wild Honey",
+  "apis-cerana-beebox":     "Cerana Box",
+  "mellifera-beebox":       "Mellifera Box",
+  "raw-honeycomb":          "Honeycomb",
+  "pure-beeswax":           "Beeswax",
+  "propolis-extract":       "Propolis",
+  "royal-jelly":            "Royal Jelly",
 };
 
 export default function HoneyPage() {

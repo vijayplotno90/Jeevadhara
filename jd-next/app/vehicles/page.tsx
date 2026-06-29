@@ -16,6 +16,11 @@ const COND_TABS = [
   { value: "used", label: "Used" },
 ];
 
+const VEH_IMG: Record<string, string> = {
+  "mahindra-575-ramu":    "/vehicles/mahindra-575-di.jpg",
+  "sonalika-750-venkat":  "/vehicles/sonalika-750-di.jpg",
+};
+
 interface VehicleRow {
   slug:         string;
   name:         string;
@@ -60,7 +65,6 @@ export default async function VehiclesPage({
       `SELECT
          v.slug, MIN(v.name) AS name,
          v.vehicle_type, v.condition,
-         MIN(v.image_url)                        AS image_url,
          COUNT(*)::int                           AS seller_count,
          MIN(v.price)                            AS min_price,
          MAX(v.price)                            AS max_price,
@@ -190,8 +194,12 @@ function NewVehicleCard({ v, vtype, vcond }: { v: VehicleRow; vtype: string; vco
       </div>
 
       <div className="relative h-52 bg-gray-100 overflow-hidden pt-7">
-        <img src={v.image_url || "/vehicles/placeholder.jpg"} alt={v.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        {VEH_IMG[v.slug] ? (
+          <img src={VEH_IMG[v.slug]} alt={v.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        ) : (
+          <div className="w-full h-full bg-blue-100 flex items-center justify-center text-4xl">🚜</div>
+        )}
         {v.min_hp && (
           <span className="absolute bottom-2 right-2 bg-white/90 text-gray-800 text-xs px-2 py-0.5 rounded-full font-bold">
             {v.min_hp === v.max_hp ? `${v.min_hp} HP` : `${v.min_hp}-${v.max_hp} HP`}
@@ -234,8 +242,12 @@ function UsedVehicleCard({ v, vtype, vcond }: { v: VehicleRow; vtype: string; vc
       className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all group">
 
       <div className="relative h-52 bg-gray-100 overflow-hidden">
-        <img src={v.image_url || "/vehicles/placeholder.jpg"} alt={v.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        {VEH_IMG[v.slug] ? (
+          <img src={VEH_IMG[v.slug]} alt={v.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        ) : (
+          <div className="w-full h-full bg-blue-100 flex items-center justify-center text-4xl">🚜</div>
+        )}
         <span className="absolute top-2 left-2 bg-amber-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold">Used</span>
         <span className="absolute top-2 right-2 bg-white/90 text-gray-700 text-xs px-2 py-0.5 rounded-full font-medium">Individual</span>
         {v.min_hp && (
