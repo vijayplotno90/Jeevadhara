@@ -28,14 +28,26 @@ interface SellerRow {
   seller_district: string | null;
 }
 
+const HONEY_IMG: Record<string, string> = {
+  "raw-forest-honey":             "/honey/forest-wild-honey.jpg",
+  "multiflora-wild-honey":        "/honey/multiflora-wild-honey.jpg",
+  "apis-cerana-beebox-for-sale":  "/honey/beeboxes.webp",
+  "mellifera-beebox-for-sale":    "/honey/beeboxes.webp",
+  "raw-honeycomb":                "/honey/honeycomb.jpg",
+  "pure-beeswax":                 "/honey/beewax.jpg",
+  "propolis-extract":             "/honey/propolis.jpg",
+  "royal-jelly":                  "/honey/royal-jelly.jpg",
+};
+
 const HONEY_EMOJIS: Record<string, string> = {
-  "raw-forest-honey": "Honey",
-  "apis-cerana-honey": "Cerana",
-  "mellifera-honey": "Mellifera",
-  "raw-honeycomb": "Honeycomb",
-  "propolis-extract": "Propolis",
-  "pure-beeswax": "Beeswax",
-  "royal-jelly": "Royal Jelly",
+  "raw-forest-honey":             "Forest Honey",
+  "multiflora-wild-honey":        "Wild Honey",
+  "apis-cerana-beebox-for-sale":  "Cerana Box",
+  "mellifera-beebox-for-sale":    "Mellifera Box",
+  "raw-honeycomb":                "Honeycomb",
+  "pure-beeswax":                 "Beeswax",
+  "propolis-extract":             "Propolis",
+  "royal-jelly":                  "Royal Jelly",
 };
 
 export default function HoneyPage() {
@@ -94,8 +106,8 @@ export default function HoneyPage() {
                 className="bg-white rounded-2xl shadow hover:shadow-md transition-all text-left overflow-hidden group"
               >
                 <div className="relative h-44 bg-amber-50 flex items-center justify-center">
-                  {p.image_url ? (
-                    <Image src={p.image_url} alt={p.name} fill className="object-cover"
+                  {(p.image_url || HONEY_IMG[p.slug]) ? (
+                    <Image src={p.image_url || HONEY_IMG[p.slug]} alt={p.name} fill className="object-cover"
                       sizes="(max-width:640px) 50vw, 33vw" />
                   ) : (
                     <span className="text-3xl text-amber-600">{HONEY_EMOJIS[p.slug] || "Honey"}</span>

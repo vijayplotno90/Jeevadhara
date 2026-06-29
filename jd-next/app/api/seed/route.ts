@@ -144,15 +144,33 @@ async function run() {
 
     // Ensure image_url column exists on products
     try { await query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT`); } catch { /* exists */ }
-    // Fix honey product images + rename beeboxes (run every seed)
-    await query(`UPDATE products SET image_url='/honey/raw-honey.jpg' WHERE name ILIKE '%forest%honey%' OR name ILIKE '%wild%honey%' OR name ILIKE '%multiflora%'`);
-    await query(`UPDATE products SET image_url='/honey/beeboxes.webp', name='Apis Cerana Beebox (8-frame)', category='honey' WHERE name ILIKE '%cerana%'`);
-    await query(`UPDATE products SET image_url='/honey/beeboxes.webp', name='Mellifera Beebox (10-frame)', category='honey' WHERE name ILIKE '%mellifera%'`);
+
+    // Fix honey product images (separate images per product)
+    await query(`UPDATE products SET image_url='/honey/forest-wild-honey.jpg' WHERE name ILIKE '%forest%honey%'`);
+    await query(`UPDATE products SET image_url='/honey/multiflora-wild-honey.jpg' WHERE name ILIKE '%multiflora%' OR (name ILIKE '%wild%honey%' AND name NOT ILIKE '%forest%')`);
     await query(`UPDATE products SET image_url='/honey/honeycomb.jpg' WHERE name ILIKE '%honeycomb%'`);
     await query(`UPDATE products SET image_url='/honey/beewax.jpg' WHERE name ILIKE '%beeswax%' OR name ILIKE '%bee wax%'`);
     await query(`UPDATE products SET image_url='/honey/propolis.jpg' WHERE name ILIKE '%propolis%'`);
     await query(`UPDATE products SET image_url='/honey/royal-jelly.jpg' WHERE name ILIKE '%royal%jelly%'`);
-    log.push("Honey images + beebox names updated");
+
+    // Rebuild cerana beeboxes: 2 sellers, price range 3500–5000
+    await query(`DELETE FROM products WHERE name ILIKE '%cerana%'`);
+    await query(
+      "INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,image_url,created_at) VALUES" +
+      "($1,'Apis Cerana Beebox for Sale','honey',3500,'beebox',5,'Apis Cerana 8-frame beebox. Colony + queen included. Ready to place.','Nalgonda',FALSE,TRUE,'/honey/beeboxes.webp',NOW()-INTERVAL '5 days')," +
+      "($2,'Apis Cerana Beebox for Sale','honey',5000,'beebox',3,'Premium Cerana colony. 6-month established hive. High yield.','Warangal',FALSE,TRUE,'/honey/beeboxes.webp',NOW()-INTERVAL '3 days')",
+      [ramuId, venkatId]
+    );
+
+    // Rebuild mellifera beeboxes: 2 sellers, price range 4000–5500
+    await query(`DELETE FROM products WHERE name ILIKE '%mellifera%'`);
+    await query(
+      "INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,image_url,created_at) VALUES" +
+      "($1,'Mellifera Beebox for Sale','honey',4000,'beebox',4,'Apis Mellifera 10-frame Langstroth hive. New colony.','Nalgonda',FALSE,TRUE,'/honey/beeboxes.webp',NOW()-INTERVAL '4 days')," +
+      "($2,'Mellifera Beebox for Sale','honey',5500,'beebox',2,'Full-strength Mellifera 10-frame colony. High production.','Nizamabad',FALSE,TRUE,'/honey/beeboxes.webp',NOW()-INTERVAL '6 days')",
+      [ramuId, lakshmiId]
+    );
+    log.push("Honey images + beebox names + prices updated");
 
     // Always rebuild livestock with correct breed-based slugs and 3 sellers per breed
     await query("DELETE FROM livestock");
@@ -237,6 +255,12 @@ async function run() {
     await query(`UPDATE tools SET name='Drip Irrigation Kit', image_url='/tools/drip-irrigation-kit.jpg' WHERE name ILIKE '%drip%'`);
     await query(`UPDATE tools SET image_url='/tools/honda-sprayer.jpg' WHERE name ILIKE '%sprayer%' OR name ILIKE '%honda%'`);
     await query(`UPDATE tools SET image_url='/tools/rotavator.jpg' WHERE name ILIKE '%rotavator%'`);
+
+    // Fix vehicle images
+    try { await query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS image_url TEXT`); } catch { /* exists */ }
+    await query(`UPDATE vehicles SET image_url='/vehicles/mahindra-575-di.jpg' WHERE name ILIKE '%mahindra%575%'`);
+    await query(`UPDATE vehicles SET image_url='/vehicles/sonalika-750-di.jpg' WHERE name ILIKE '%sonalika%'`);
+    log.push("Vehicle images updated");
 
     if ((await cnt("orders", "customer_id", priyaId)) === 0) {
       const t = await query<{ id: string }>("SELECT id FROM products WHERE farmer_id=$1 AND name='Organic Tomatoes' LIMIT 1", [ramuId]);
