@@ -121,25 +121,44 @@ async function run() {
       log.push("Products: 3 from Lakshmi");
     }
 
-    if ((await cnt("livestock", "farmer_id", ramuId)) === 0) {
-      await query(
-        "INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,milk_liters_per_day,lactation_number,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,image_url,is_active,created_at) VALUES" +
-        "($1,'Gir Cow','gir-cow-ramu','cattle',4,2,'Golden Brown',420,12,2,'Excellent','Fully Vaccinated','None',85000,1,'Nalgonda','Solipeta','Purebred Gir. 12L/day. FMD vaccinated.','/livestock/gir1.png',TRUE,NOW()-INTERVAL '3 days')," +
-        "($1,'Murrah Buffalo','murrah-buffalo-ramu','buffalo',5,0,'Black',550,15,3,'Excellent','Fully Vaccinated','None',95000,1,'Nalgonda','Solipeta','15L/day. Recently calved.','/livestock/murrah.png',TRUE,NOW()-INTERVAL '5 days')",
-        [ramuId]
-      );
-      log.push("Livestock: 2 from Ramu");
-    }
-
-    if ((await cnt("livestock", "farmer_id", venkatId)) === 0) {
-      await query(
-        "INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,image_url,is_active,created_at,eggs_per_year) VALUES" +
-        "($1,'Boer Goat','boer-goat-venkat','goat',1,6,'White-Brown',35,'Good','Vaccinated','None',12000,4,'Warangal','Hasanparthy','Quality Boer meat goats.','/livestock/gir1.png',TRUE,NOW()-INTERVAL '2 days',NULL)," +
-        "($1,'Kadaknath Chicken','kadaknath-venkat','poultry',0,8,'Black',2,'Good','Vaccinated','None',850,20,'Warangal','Hasanparthy','High protein black meat chicken.','/livestock/Kadaknath.webp',TRUE,NOW()-INTERVAL '4 days',180)",
-        [venkatId]
-      );
-      log.push("Livestock: 2 from Venkat");
-    }
+    // Always rebuild livestock with correct breed-based slugs and 3 sellers per breed
+    await query("DELETE FROM livestock");
+    await query(
+      `INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,milk_liters_per_day,lactation_number,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,image_url,is_vet_certified,is_active,created_at) VALUES
+      ($1,'Gir Cow','gir-cow','cattle',4,2,'Golden Brown',420,12,2,'Excellent','Fully Vaccinated','None',85000,1,'Nalgonda','Solipeta','Purebred Gir. 12L/day. FMD vaccinated.','/livestock/gir1.png',TRUE,TRUE,NOW()-INTERVAL '3 days'),
+      ($2,'Gir Cow','gir-cow','cattle',3,4,'Tawny Red',390,10,1,'Good','Fully Vaccinated','None',72000,1,'Warangal','Hasanparthy','Young Gir, first lactation. 10L/day. A2 milk.','/livestock/gir1.png',FALSE,TRUE,NOW()-INTERVAL '5 days'),
+      ($3,'Gir Cow','gir-cow','cattle',5,0,'Reddish Brown',440,14,3,'Excellent','Fully Vaccinated','None',95000,1,'Nizamabad','Armoor','High-yielding Gir. 14L/day. 3rd lactation. Vet certified.','/livestock/gir1.png',TRUE,TRUE,NOW()-INTERVAL '7 days')`,
+      [ramuId, venkatId, lakshmiId]
+    );
+    await query(
+      `INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,milk_liters_per_day,lactation_number,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,image_url,is_vet_certified,is_active,created_at) VALUES
+      ($1,'Murrah Buffalo','murrah-buffalo','buffalo',5,0,'Black',550,15,3,'Excellent','Fully Vaccinated','None',95000,1,'Nalgonda','Solipeta','15L/day. Recently calved. High fat milk.','/livestock/murrah.png',TRUE,TRUE,NOW()-INTERVAL '4 days'),
+      ($2,'Murrah Buffalo','murrah-buffalo','buffalo',4,6,'Jet Black',510,13,2,'Good','Fully Vaccinated','None',82000,1,'Warangal','Hasanparthy','13L/day. 2nd lactation. Ideal for ghee production.','/livestock/murrah.png',FALSE,TRUE,NOW()-INTERVAL '6 days'),
+      ($3,'Murrah Buffalo','murrah-buffalo','buffalo',6,0,'Black',580,16,4,'Excellent','Fully Vaccinated','None',110000,1,'Nizamabad','Armoor','Top yielding Murrah. 16L/day 7-8% fat. Vet certified.','/livestock/murrah.png',TRUE,TRUE,NOW()-INTERVAL '8 days')`,
+      [ramuId, venkatId, lakshmiId]
+    );
+    await query(
+      `INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,eggs_per_year,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,image_url,is_vet_certified,is_active,created_at) VALUES
+      ($1,'Kadaknath Chicken','kadaknath','poultry',0,8,'Black',2,180,'Good','Vaccinated','None',850,20,'Warangal','Hasanparthy','High protein black meat chicken. 180 eggs/yr.','/livestock/Kadaknath.webp',FALSE,TRUE,NOW()-INTERVAL '4 days'),
+      ($2,'Kadaknath Chicken','kadaknath','poultry',0,6,'Black',1.8,160,'Good','Vaccinated','None',750,30,'Nalgonda','Solipeta','Genuine Kadaknath. 160 eggs/yr. Low cholesterol.','/livestock/Kadaknath.webp',FALSE,TRUE,NOW()-INTERVAL '6 days'),
+      ($3,'Kadaknath Chicken','kadaknath','poultry',0,10,'Black',2.2,200,'Excellent','Fully Vaccinated','None',950,15,'Nizamabad','Armoor','Premium breed. 200 eggs/yr. Vet certified flock.','/livestock/Kadaknath.webp',TRUE,TRUE,NOW()-INTERVAL '2 days')`,
+      [venkatId, ramuId, lakshmiId]
+    );
+    await query(
+      `INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,health_condition,vaccination_status,disease_history,price,quantity_available,district,village,description,image_url,is_vet_certified,is_active,created_at) VALUES
+      ($1,'Deccani Sheep','deccani-sheep','sheep',2,0,'Grey-Black',28,'Good','Vaccinated','None',8000,5,'Nizamabad','Armoor','Native Deccani. Hardy breed. Wool + manure.','/livestock/Deccani-Sheep.webp',FALSE,TRUE,NOW()-INTERVAL '5 days'),
+      ($2,'Deccani Sheep','deccani-sheep','sheep',1,6,'Black',22,'Good','Vaccinated','None',7000,8,'Nalgonda','Solipeta','Young Deccani ewes. Drought-tolerant. Low maintenance.','/livestock/Deccani-Sheep.webp',FALSE,TRUE,NOW()-INTERVAL '3 days'),
+      ($3,'Deccani Sheep','deccani-sheep','sheep',3,0,'Brownish Grey',35,'Excellent','Fully Vaccinated','None',10000,3,'Warangal','Hasanparthy','Full-grown Deccani rams. MGNREGS eligible breed.','/livestock/Deccani-Sheep.webp',TRUE,TRUE,NOW()-INTERVAL '7 days')`,
+      [lakshmiId, ramuId, venkatId]
+    );
+    await query(
+      `INSERT INTO livestock (farmer_id,breed,slug,category,age_years,age_months,color,body_weight_kg,health_condition,vaccination_status,disease_history,price,unit,quantity_available,district,village,description,image_url,is_vet_certified,is_active,created_at) VALUES
+      ($1,'Rohu Fish','rohu','fish',0,3,'Silver-Red',0.05,'Excellent','Disease-free','None',15,'fingerling',1000,'Nizamabad','Armoor','Rohu fingerlings for pond stocking. Fast-growing carp.','/livestock/Rohu.webp',FALSE,TRUE,NOW()-INTERVAL '4 days'),
+      ($2,'Rohu Fish','rohu','fish',0,4,'Silver-Red',0.07,'Good','Disease-free','None',12,'fingerling',2000,'Nalgonda','Solipeta','Healthy Rohu seed. 10-12 month market cycle.','/livestock/Rohu.webp',FALSE,TRUE,NOW()-INTERVAL '6 days'),
+      ($3,'Rohu Fish','rohu','fish',0,5,'Silver',0.09,'Excellent','Certified Disease-free','None',18,'fingerling',500,'Warangal','Hasanparthy','Premium Rohu. CIFA certified seed. High survival rate.','/livestock/Rohu.webp',TRUE,TRUE,NOW()-INTERVAL '2 days')`,
+      [lakshmiId, ramuId, venkatId]
+    );
+    log.push("Livestock: 5 breeds × 3 sellers = 15 listings");
 
     if ((await cnt("vehicles", "seller_id", ramuId)) === 0) {
       await query(
@@ -219,7 +238,7 @@ async function run() {
       log.push("Enquiries: 2 from Venkat");
     }
 
-    return NextResponse.json({ success: true, log, summary: { farmers: 3, customers: 1, providers: 1, products: 12, livestock: 4, vehicles: 2, tools: 3, orders: 4, enquiries: 7 } });
+    return NextResponse.json({ success: true, log, summary: { farmers: 3, customers: 1, providers: 1, products: 12, livestock: 15, vehicles: 2, tools: 3, orders: 4, enquiries: 7 } });
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Seed failed";

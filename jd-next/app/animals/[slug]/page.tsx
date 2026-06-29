@@ -9,6 +9,14 @@ const CAT_EMOJI: Record<string, string> = {
   cattle: "🐄", buffalo: "🐃", poultry: "🐔", sheep: "🐑", fish: "🐟",
 };
 
+const CAT_IMG: Record<string, string> = {
+  cattle:  "/livestock/gir1.png",
+  buffalo: "/livestock/murrah.png",
+  poultry: "/livestock/Kadaknath.webp",
+  sheep:   "/livestock/Deccani-Sheep.webp",
+  fish:    "/livestock/Rohu.webp",
+};
+
 const BREED_INFO: Record<string, { about: string; uses: string[] }> = {
   "gir-cow": {
     about: "Gir cow is one of India's most prized indigenous dairy breeds, originating from Gujarat. Known for producing high-quality A2 beta-casein milk, which is easier to digest and preferred for health-conscious families.",
@@ -114,7 +122,7 @@ export default async function LivestockDetailPage({
       {/* Hero */}
       <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 mb-6">
         <div className="relative h-64 sm:h-80 bg-gray-100">
-          <img src={first.image_url || "/livestock/gir1.png"} alt={first.breed}
+          <img src={first.image_url || CAT_IMG[first.category] || "/livestock/gir1.png"} alt={first.breed}
             className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="absolute bottom-4 left-4 text-white">
