@@ -93,10 +93,12 @@ export default function ImplementsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-gradient-to-r from-orange-600 to-amber-500 text-white px-4 py-8">
-        <h1 className="text-2xl font-bold">Farm Tools and Implements</h1>
-        <p className="text-orange-100 text-sm mt-1">
-          Hand tools and powered equipment - all new, from verified sellers
-        </p>
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold">🔧 Farm Tools & Implements</h1>
+          <p className="text-orange-100 text-sm mt-1">
+            Hand tools and powered equipment — all new, from verified sellers
+          </p>
+        </div>
       </div>
 
       <div className="sticky top-0 z-10 bg-white border-b shadow-sm px-4 py-3 flex gap-3 overflow-x-auto">

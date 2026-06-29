@@ -72,10 +72,12 @@ export default function HoneyPage() {
   return (
     <div className="min-h-screen bg-amber-50">
       <div className="bg-gradient-to-r from-amber-500 to-yellow-400 text-white px-4 py-8">
-        <h1 className="text-2xl font-bold">Honey and Bee Products</h1>
-        <p className="text-amber-100 text-sm mt-1">
-          Raw honey, beeswax, propolis and royal jelly - direct from Telangana beekeepers
-        </p>
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold">🍯 Honey & Bee Products</h1>
+          <p className="text-amber-100 text-sm mt-1">
+            Raw honey, beeswax, propolis and royal jelly — direct from India's beekeepers
+          </p>
+        </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
