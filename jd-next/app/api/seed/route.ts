@@ -171,9 +171,9 @@ async function run() {
     if (parseInt(ceranaCount||'0') < 2) {
       await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Apis Cerana Bee Boxes','honey',5000,'beebox',3,'Premium Cerana. High-yield colony. Vet inspected.','Warangal',FALSE,TRUE,NOW()-INTERVAL '3 days')`, [venkatId]);
     }
-    // Fix cerana prices to correct range
-    await query(`UPDATE products SET price=4500 WHERE name ILIKE '%cerana%' AND price < 4500`);
-    await query(`UPDATE products SET price=5000 WHERE name ILIKE '%cerana%' AND price > 5000`);
+    // Fix cerana prices: lowest seller=4500, highest seller=5000
+    await query(`UPDATE products SET price=4500 WHERE id=(SELECT id FROM products WHERE name ILIKE '%cerana%' ORDER BY price ASC LIMIT 1)`);
+    await query(`UPDATE products SET price=5000 WHERE id=(SELECT id FROM products WHERE name ILIKE '%cerana%' ORDER BY price DESC LIMIT 1)`);
 
     // Add extra mellifera sellers if fewer than 2 exist (price range 5000-5500)
     const melliferaCount = (await query<{c:string}>(`SELECT COUNT(*) AS c FROM products WHERE name ILIKE '%mellifera%'`))[0]?.c;
@@ -183,9 +183,9 @@ async function run() {
     if (parseInt(melliferaCount||'0') < 2) {
       await query(`INSERT INTO products (farmer_id,name,category,price,unit,stock,description,district,is_organic,is_active,created_at) VALUES ($1,'Mellifera Bee Boxes','honey',5500,'beebox',2,'Full-strength Mellifera. Export quality.','Nizamabad',FALSE,TRUE,NOW()-INTERVAL '6 days')`, [lakshmiId]);
     }
-    // Fix mellifera prices to correct range
-    await query(`UPDATE products SET price=5000 WHERE name ILIKE '%mellifera%' AND price < 5000`);
-    await query(`UPDATE products SET price=5500 WHERE name ILIKE '%mellifera%' AND price > 5500`);
+    // Fix mellifera prices: lowest seller=5000, highest seller=5500
+    await query(`UPDATE products SET price=5000 WHERE id=(SELECT id FROM products WHERE name ILIKE '%mellifera%' ORDER BY price ASC LIMIT 1)`);
+    await query(`UPDATE products SET price=5500 WHERE id=(SELECT id FROM products WHERE name ILIKE '%mellifera%' ORDER BY price DESC LIMIT 1)`);
 
     // Final image + name fix after all inserts
     try {

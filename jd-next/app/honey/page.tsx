@@ -30,6 +30,7 @@ interface SellerRow {
 
 const HONEY_IMG: Record<string, string> = {
   "raw-forest-honey":       "/honey/forest-wild-honey.jpg",
+  "forest-wild-honey":      "/honey/forest-wild-honey.jpg",
   "multiflora-wild-honey":  "/honey/multiflora-wild-honey.jpg",
   "apis-cerana-beebox":     "/honey/beeboxes.webp",
   "apis-cerana-bee-boxes":  "/honey/beeboxes.webp",
