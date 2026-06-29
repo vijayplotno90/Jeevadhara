@@ -34,8 +34,8 @@ async function ensureTables() {
 }
 
 async function upsertUser(name: string, phone: string, role: string, district: string, village: string, pin: string): Promise<string> {
-  // Ensure pin column exists
-  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS pin VARCHAR(10)`);
+  // Ensure pin column exists (ignore if already exists or insufficient privilege)
+  try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS pin VARCHAR(10)`); } catch { /* already exists */ }
   const ex = await query<{ id: string }>("SELECT id FROM users WHERE phone = $1", [phone]);
   if (ex.length > 0) {
     // Force-update name/role/district/pin so re-seeding always fixes demo accounts
