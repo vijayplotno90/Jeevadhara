@@ -34,22 +34,43 @@ async function ensureTables() {
 }
 
 async function upsertUser(name: string, phone: string, role: string, district: string, village: string, pin: string): Promise<string> {
-  // Ensure pin column exists (ignore if already exists or insufficient privilege)
-  try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS pin VARCHAR(10)`); } catch { /* already exists */ }
+  // Check if pin column exists
+  const colCheck = await query<{ exists: boolean }>(
+    `SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='pin') AS exists`
+  );
+  const hasPinCol = colCheck[0]?.exists;
+
+  if (!hasPinCol) {
+    // Try to add pin column; if we lack privilege, the login page handles it
+    try { await query(`ALTER TABLE users ADD COLUMN pin VARCHAR(10)`); } catch { /* no privilege — proceed without pin */ }
+  }
+
   const ex = await query<{ id: string }>("SELECT id FROM users WHERE phone = $1", [phone]);
   if (ex.length > 0) {
-    // Force-update name/role/district/pin so re-seeding always fixes demo accounts
-    await query(
-      "UPDATE users SET name=$1, role=$2, district=$3, village=$4, pin=$5 WHERE phone=$6",
-      [name, role, district, village, pin, phone]
-    );
+    const pinColNow = hasPinCol || (await query<{ exists: boolean }>(`SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='pin') AS exists`))[0]?.exists;
+    if (pinColNow) {
+      await query("UPDATE users SET name=$1, role=$2, district=$3, village=$4, pin=$5 WHERE phone=$6", [name, role, district, village, pin, phone]);
+    } else {
+      await query("UPDATE users SET name=$1, role=$2, district=$3, village=$4 WHERE phone=$5", [name, role, district, village, phone]);
+    }
     return ex[0].id;
   }
-  const r = await query<{ id: string }>(
-    "INSERT INTO users (name,phone,role,district,village,pin,created_at) VALUES ($1,$2,$3,$4,$5,$6,NOW()) RETURNING id",
-    [name, phone, role, district, village, pin]
-  );
-  return r[0].id;
+
+  // New user insert
+  const pinColFinal = (await query<{ exists: boolean }>(`SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='pin') AS exists`))[0]?.exists;
+  if (pinColFinal) {
+    const r = await query<{ id: string }>(
+      "INSERT INTO users (name,phone,role,district,village,pin,created_at) VALUES ($1,$2,$3,$4,$5,$6,NOW()) RETURNING id",
+      [name, phone, role, district, village, pin]
+    );
+    return r[0].id;
+  } else {
+    const r = await query<{ id: string }>(
+      "INSERT INTO users (name,phone,role,district,village,created_at) VALUES ($1,$2,$3,$4,$5,NOW()) RETURNING id",
+      [name, phone, role, district, village]
+    );
+    return r[0].id;
+  }
 }
 
 async function upsertFarm(farmerId: string, farmName: string, district: string, village: string, acres: number, crops: string) {
