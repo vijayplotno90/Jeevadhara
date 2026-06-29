@@ -37,6 +37,19 @@ const PLANT_COLOR: Record<string, string> = {
   "l-49-guava": "from-green-400 to-lime-300",
 };
 
+const PLANT_IMG: Record<string, string> = {
+  "alphonso-mango-sapling": "/nursery/alphonso-mango.jpg",
+  "g9-banana-tc-plant":     "/nursery/banana.jpg",
+  "west-coast-tall-coconut":"/nursery/coconut.jpg",
+  "teak-sapling-1yr":       "/nursery/teak.jpg",
+  "moringa-pkm-1":          "/nursery/moringa-pkm1.jpg",
+  "sitaphal-na-1":          "/nursery/sitaphal.jpg",
+  "amla-na-7":              "/nursery/amla.jpg",
+  "l-49-guava":             "/nursery/guava.jpg",
+  "fresh-curry-leaves":     "/nursery/curry-leaves.jpg",
+  "moringa-saplings":       "/nursery/moringa.jpg",
+};
+
 export default function PlantationPage() {
   const [plants, setPlants] = useState<PlantRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,9 +104,16 @@ export default function PlantationPage() {
               return (
                 <button key={p.slug} onClick={() => openModal(p.slug, p.name)}
                   className="bg-white rounded-2xl shadow hover:shadow-md transition-all text-left overflow-hidden group">
-                  <div className={`h-36 bg-gradient-to-br ${gradient} flex items-center justify-center relative`}>
-                    <span className="text-4xl drop-shadow">{p.slug.includes("mango") ? "Mango" : p.slug.includes("banana") ? "Banana" : p.slug.includes("coconut") ? "Coconut" : "Plant"}</span>
-                    <span className="absolute bottom-2 right-2 text-white text-xs bg-black/30 px-2 py-0.5 rounded-full">
+                  <div className="h-36 relative overflow-hidden bg-green-50">
+                    {(p.image_url || PLANT_IMG[p.slug]) ? (
+                      <img src={p.image_url || PLANT_IMG[p.slug]} alt={p.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <div className={`h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                        <span className="text-4xl drop-shadow">🌱</span>
+                      </div>
+                    )}
+                    <span className="absolute bottom-2 right-2 text-white text-xs bg-black/40 px-2 py-0.5 rounded-full">
                       {p.seller_count} dealer{p.seller_count !== 1 ? "s" : ""}
                     </span>
                   </div>
